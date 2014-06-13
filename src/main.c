@@ -183,7 +183,7 @@ long bub_adap[2],					///< Bubble to adaptive channels.
 	 bub_z;							///< Bubble to Z Dimension Escape Channels. Usually equal to X,Y.
 double intransit_pr;				///< Priority given to in-transit traffic.
 double global_cc;					///< Global congestion control. Percent of the system recurses used.
-static long congestion_limit;	///< congestion limit calculated from global_cc.
+long congestion_limit;	///< congestion limit calculated from global_cc.
 CLOCK_TYPE update_period;					///< Period taken to calculate the global ocupation.
 CLOCK_TYPE timeout_upper_limit;	///< Timeout limit to enter in congested mode.
 CLOCK_TYPE timeout_lower_limit;	///< Timeout limit to leave congested mode.
