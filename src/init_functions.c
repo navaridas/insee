@@ -18,11 +18,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "globals.h"
-#include "misc.h"
-
 #include <stdlib.h>
 #include <string.h>
+
+#include "globals.h"
+#include "misc.h"
 
 /**
 * Initialization of functions.
