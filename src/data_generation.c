@@ -42,13 +42,6 @@ void read_histogram();
 static long net_capacity;
 
 /**
-* The maximun queue occupancy allowed in global congestion control.
-*
-* When this value is exceeded all data generation is stopped.
-*/
-static long congestion_limit;
-
-/**
 * An array for packet count in shotmode simulation.
 *
 * It stores the number of packets injected by each node, so its size is equal to the network size.
