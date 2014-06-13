@@ -10,10 +10,11 @@
 #ifndef _misc
 #define _misc
 
-#include "constants.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "constants.h"
 
 /**
 * Choose a random number in [ 0, m ).
