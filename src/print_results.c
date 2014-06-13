@@ -40,15 +40,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 char * pheader[] =
 {
 	"      clock",
-	",   iload",   /* Injected load */
-	",   cload",   /* Consumed load */
-	", adelay",    /* Average delay */
-	", ddelay",    /* Average deviation */
-	", mdelay",    /* Max delay */
-	", av_i_delay",
-	", i_delay_av",
-	", max_i_delay",
-	", inj. limit, curr. ocup.",
+	", injload",   /* Injected load */
+	", accload",   /* Consumed load */
+	", avgdel",    /* Average latency */
+	", stddel",    /* Standard deviation of latency */
+	", maxdel",    /* Maximum latency */
+	", avginjdel", /* Average injection latency */
+	", stdinjdel", /* Standard deviation oj injection latency */
+	", maxinjdel", /* Maximum injection latency */
+	", inj. limit, cur. occup.",
 };
 
 /**
@@ -124,13 +124,13 @@ void print_partials(void) {
 	if(pheaders & 32)
 		printf(", %6ld", max_delay);
 	if(pheaders & 64)
-		printf(", %10.5lf", acum_inj_delay/injected_count);
+		printf(", %9.5lf", acum_inj_delay/injected_count);
 	if(pheaders & 128)
-		printf(", %10.5lf", sqrt(fabs((acum_sq_inj_delay-(acum_inj_delay*acum_inj_delay)/injected_count)/(injected_count-1))));
+		printf(", %9.5lf", sqrt(fabs((acum_sq_inj_delay-(acum_inj_delay*acum_inj_delay)/injected_count)/(injected_count-1))));
 	if(pheaders & 256)
-		printf(", %11ld", max_inj_delay);
+		printf(", %9ld", max_inj_delay);
 	if(pheaders & 512)
-		printf(", %10.0lf, %11.0lf, %11.0lf, %11.0lf, %11.0lf", global_q_u, (injected_count - rcvd_count - transit_dropped_count),injected_count,rcvd_count,transit_dropped_count);
+		printf(", %10.0lf, %11.0lf", congestion_limit, global_q_u_current);
 	printf("\n");
 	if(pheaders & 1024){
 		fprintf(fp, "%"PRINT_CLOCK, sim_clock);
@@ -316,9 +316,9 @@ void print_results(time_t start_time, time_t end_time) {
 			printf("Trigger rate, packets triggered:  %1.5f %1.5f", trigger_rate, trigger_min);
 			if (trigger_min!=trigger_max)
 			    printf("..%1.5f", trigger_max);
-			printf("\nWarm Up Period Prov. Used:      %11" PRINT_CLOCK " + %11" PRINT_CLOCK " %11" PRINT_CLOCK "\n", warm_up_period, max_conv_time, warmed_up);
-			printf("Conv. sampling period, threshold: %11"PRINT_CLOCK" %10.5f\n", conv_period, threshold);
-			printf("Sample count, size, min pkts:     %-4ld %"PRINT_CLOCK" %10ld\n", samples, batch_time, min_batch_size);
+			printf("\nWarm Up Period Prov., Used:       %"PRINT_CLOCK " + %"PRINT_CLOCK", %"PRINT_CLOCK"\n", warm_up_period, max_conv_time, warmed_up);
+			printf("Conv. sampling period, threshold: %"PRINT_CLOCK", %lf\n", conv_period, threshold);
+			printf("Sample count, size, min pkts:     %ld x %"PRINT_CLOCK", %ld\n", samples, batch_time, min_batch_size);
 		}
 
 #endif
