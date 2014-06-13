@@ -138,6 +138,7 @@ extern bool_t parallel_injection;
 extern bool_t shotmode;
 extern long shotsize;
 extern double global_cc;
+extern long congestion_limit;
 extern CLOCK_TYPE timeout_upper_limit;
 extern CLOCK_TYPE timeout_lower_limit;
 
