@@ -46,10 +46,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define EXECUTION_DRIVEN 0	///< If non-zero, performs a execution driven simulation. Overrides other execution modes in #tpattern.
 #endif /* EXECUTION DRIVEN */
 
-/*#ifndef CLOCK_TYPE
-#define CLOCK_TYPE long long ///< data type to use for simulation time variables. Needs to be signed because some negative numbers are used for different purposes.
-#endif /* CLOCK_TYPE */
-
 typedef long long CLOCK_TYPE;
 
 #ifndef PRINT_CLOCK
