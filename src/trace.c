@@ -24,12 +24,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#if (TRACE_SUPPORT != 0)
-
 #include <string.h>
 
 #include "globals.h"
 #include "dimemas.h"
+
+#if (TRACE_SUPPORT != 0)
 
 #define FILE_TIME 73		///< Default delay for accessing a file.
 #define FILE_SCALE 3		///< Default scale for file accesses based on the size.
