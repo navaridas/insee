@@ -545,17 +545,7 @@ int main(int argc, char *argv[]) {
 	time(&start_time);
 	get_conf((long)(argc - 1), argv + 1);
 	sim_clock = 1L; // HAS TO BE ONE for arbitrate to work
-	
-/*
-	printf("sim_clock %" PRINT_CLOCK "\n",sim_clock);
-	printf("sim_clock %" PRINT_CLOCK "\n",111L);
-	printf("sim_clock %" PRINT_CLOCK "\n",1111111L);
-	printf("sim_clock %" PRINT_CLOCK "\n",111111111111111L);
-	sim_clock = 111111111111111L;
-	printf("sim_clock %" PRINT_CLOCK "\n",sim_clock);
-	exit(0);
-	*/
-	
+
 	srand(r_seed);
 
 	router_init();
