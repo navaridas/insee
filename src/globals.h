@@ -21,6 +21,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef _globals
 #define _globals
 
+#include <math.h>
+#include <time.h>
+#include <limits.h>
+
 #include "packet.h"
 #include "constants.h"
 #include "literal.h"
@@ -31,10 +35,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "router.h"
 #include "pkt_mem.h"
 #include "batch.h"
-
-#include <math.h>
-#include <time.h>
-#include <limits.h>
 
 #ifndef _main
 
