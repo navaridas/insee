@@ -620,6 +620,10 @@ void request_port_bubble_adaptive_random (long i, port_type s_p) {
 /**
 * Request a port using dally trc mechanism.
 *
+* In trc all packets are injected in Escape channel 0. 
+* Packets remain in channel 0 until reaching a wrap-around
+* link where they switch to Escape channel 1.
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -632,7 +636,8 @@ void request_port_dally_trc(long i, port_type s_p) {
 	dim j; way k; channel l; // coords of port s_p making request
 	long a_x, a_y, a_z;
 
-	if (!preliminary_check(i, s_p, FALSE)) return;
+	if (!preliminary_check(i, s_p, TRUE)) 
+		return;
 	// Won't use array mt -- use d_d and d_w instead
 
 	if (s_p < p_inj_first) {
@@ -642,6 +647,7 @@ void request_port_dally_trc(long i, port_type s_p) {
 	}
 	else
 		j = INJ;
+		
 	if ((j == INJ) || (j != d_d))
 		d_c = 1; // ONE
 	else d_c = l; // "L"
@@ -677,9 +683,11 @@ void request_port_dally_trc(long i, port_type s_p) {
 }
 
 /**
-* Request a port using oblivious dally algorithm.
+* Request a port using basic dally algorithm.
 *
-* Oblivious port request, using virtual channels 0 and 1.
+* In basic those packets that have to cross the wrap-around links of a dimension 
+* circulate through Escape channel 0. 
+* Those that do not have to use the wrap-around links use the Escape channel 1.
 * 
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
@@ -693,7 +701,8 @@ void request_port_dally_basic (long i, port_type s_p) {
 	long a_x, a_y, a_z;
 	packet_t * pkt;
 
-	if (!preliminary_check(i, s_p, FALSE)) return;
+	if (!preliminary_check(i, s_p, TRUE)) 
+		return;
 	// Won't use array mt -- use d_d and d_w instead
 
 	a_x=network[i].rcoord[D_X];
@@ -736,8 +745,8 @@ void request_port_dally_basic (long i, port_type s_p) {
 /**
 * Request a port using an improved dally algorithm.
 *
-* Oblivious port request, using virtual channels 0 and 1. Implements an optimization
-* described in Duato's book to better use both VCs
+* Similar to basic, but packets not using the wrap-around links can use
+* both Escape channels.
 * 
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
@@ -751,7 +760,8 @@ void request_port_dally_improved(long i, port_type s_p) {
 	long a_x, a_y, a_z;
 	long tmp_dim, passes;
 
-	if (!preliminary_check(i, s_p, FALSE)) return;
+	if (!preliminary_check(i, s_p, TRUE)) 
+		return;
 	// Won't use array mt -- use d_d and d_w instead
 
 	a_x=network[i].rcoord[D_X];
@@ -804,7 +814,7 @@ void request_port_dally_improved(long i, port_type s_p) {
 * Request a port using the dally algorithm + some VCs.
 *
 * Adaptive port request. Channels 0 and 1 are the Escape channels,
-* following the Dally algorithm request_port_dally_improved
+* following the improved algorithm. Other virtual channels can adapt freely. 
 * 
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
@@ -814,10 +824,13 @@ void request_port_dally_improved(long i, port_type s_p) {
 */
 void request_port_dally_adaptive (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	dim j; way k; channel l;
+	dim j; 
+	way k; 
+	channel l;
 	long rp, ncand;
 
-	if (!preliminary_check(i, s_p, TRUE)) return;
+	if (!preliminary_check(i, s_p, TRUE)) 
+		return;
 
 	// Packet is in transit
 	ncand = 0;
