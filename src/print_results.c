@@ -124,9 +124,9 @@ void print_partials(void) {
 	if(pheaders & 32)
 		printf(", %6ld", max_delay);
 	if(pheaders & 64)
-		printf(", %9.5lf", acum_inj_delay/injected_count);
+		printf(", %9.5lf", acum_inj_delay/sent_count);
 	if(pheaders & 128)
-		printf(", %9.5lf", sqrt(fabs((acum_sq_inj_delay-(acum_inj_delay*acum_inj_delay)/injected_count)/(injected_count-1))));
+		printf(", %9.5lf", sqrt(fabs((acum_sq_inj_delay-(acum_inj_delay*acum_inj_delay)/sent_count)/(sent_count-1))));
 	if(pheaders & 256)
 		printf(", %9ld", max_inj_delay);
 	if(pheaders & 512)
