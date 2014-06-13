@@ -2,7 +2,6 @@
 * @file
 * @brief	Execution driven simulation & Interface with Simics tools and functions.
 */
-#include "exd.h"
 
 #if (EXECUTION_DRIVEN != 0)
 
@@ -20,6 +19,8 @@
 #include <netdb.h>
 #include <string.h>
 #include <limits.h>
+
+#include "exd.h"
 
 void packet_dispatcher(list * list_sockets, list * list_packets);
 void frame_packetizer(struct packet * pack, unsigned long FSIN_destination);
