@@ -24,16 +24,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include "misc.h"
-#include "globals.h"
-#include "literal.h"
-
 #include <stdio.h>
 #include <string.h>
 
 #ifdef WIN32
 #include <windows.h>
 #endif
+
+#include "misc.h"
+#include "globals.h"
+#include "literal.h"
 
 /** The Configuration file. */
 #define DEFAULT_CONF_FILE "fsin.conf"
