@@ -3,12 +3,14 @@
 * @brief	Execution driven simulation & Interface with Simics needed definitions.
 */
 
-#include "globals.h"
+
 #if (EXECUTION_DRIVEN != 0)
 #include <sys/time.h>
-#include "list.h"
 #include <pthread.h>
 #include <netinet/in.h>
+
+#include "globals.h"
+#include "list.h"
 
 //#define SERV_ADDR (8082)
 //#define SERV_CENTRAL (8080)
