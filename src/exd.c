@@ -403,52 +403,6 @@ port_type generate_FSIN_packet(unsigned long src, unsigned long dst, long id_eth
 }
 
 /**
- * funcion generate_FSIN_phits 
- * Esta funcion es identica a generate_phits.
- * Lo unico que cambia son los parametros de id_ethernet_frame e
- * id_packet_sequence que sirven para calcular el nuevo campo del phit
- * id_trama que esta explicado en la estructura del phit en phit.h
- */
-/*void generate_FSIN_phits(packet_t packet, port_type iport) {
-	dim j;
-	phit p;
-	inj_queue *qi;
-
-	qi = &(network[packet.from].qi[iport]);
-	if (inj_queue_space(qi) < packet.size)
-		panic("Should not be injecting phits");
-	p.size = packet.size;
-	p.pclass = RR;
-	p.rr = calc_rr(packet.from, packet.to);
-	p.inj_time = sim_clock;  // Some additional info
-	p.source = packet.from;
-	p.n_hops = 0;
-	// Lo unico nuevo junto con los parametros
-	p.id_trama = (id_ethernet_frame << num_bits_packet_sequence) | id_packet_sequence;
-
-	if(plevel > 2) {
-		printf(""PRINT_CLOCK" (%ld->%ld) [", sim_clock, packet.from, packet.to);
-		for (j=D_X; j<radix; j++)
-			printf("%ld ", p.rr.rr[j]);
-		printf("]\n");
-	}
-
-	if (p.size == 1) {
-		p.pclass = RR_TAIL;
-		inj_ins_queue(qi, &p);
-	} else {
-		inj_ins_queue(qi, &p); // The routing record
-		p.pclass = INFO;
-		inj_ins_mult_queue(qi, &p, packet.size-2); // The body
-		p.pclass = TAIL;
-		inj_ins_queue(qi, &p);
-	}
-	sent_count++;
-	sent_phit_count += packet.size;
-}
-*/
-
-/**
  * Funcion que comprueba si ha llegado un paquete y una trama depues de que haya
  * llegado un phit a su destino en FSIN
  * Los parametros son el nodo al que ha llegado el phit y el phit en cuestion
