@@ -12,8 +12,7 @@
 #include "globals.h"
 #include "list.h"
 
-//#define SERV_ADDR (8082)
-//#define SERV_CENTRAL (8080)
+
 #define DEBUG 2
 
 /* FSIN statistics collection */
@@ -24,9 +23,7 @@
 #define IP_ADDR_LEN 4
 
 /* FSIN node latency alteration */
-/*#define PADDING_LATENCY "latency:"
-#define PADDING_LATENCY_SIZE 8
-#define PADDING_LATENCY_DATA_SIZE 10*/
+
 
 char broadcast[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 int run_FSIN = 0;
