@@ -243,7 +243,7 @@ void generate_phits(unsigned long packet, port_type iport) {
 	p.pclass = RR;
 
 	if(plevel & 16) {
-		printf("T: "PRINT_CLOCK" - N: %4ld Packet(id %5ld) Injected (%ld->%ld)\n",sim_clock, node, packet, node, pkt_space[packet].to);
+		printf("T: %"PRINT_CLOCK" - N: %4ld Packet(id %5ld) Injected (%ld->%ld)\n",sim_clock, node, packet, node, pkt_space[packet].to);
 		if (topo<DIRECT){
 			printf("                  rr: [");
 			for (j=D_X; j<ndim; j++)
