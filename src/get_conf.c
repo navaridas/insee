@@ -995,7 +995,7 @@ void verify_conf(void) {
 		default:
 			if (!update_period)
 				update_period=1;
-			printf("WARNING: Using global congestion control with neither TORUS nor MESH topology, \n         Using value "PRINT_CLOCK"\n", update_period);
+			printf("WARNING: Using global congestion control with neither TORUS nor MESH topology, \n         Using value %"PRINT_CLOCK"\n", update_period);
 			break;
 	}
 
