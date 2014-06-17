@@ -51,6 +51,7 @@ void column_placement();
 void quadrant_placement();
 void diagonal_placement();
 void icube_placement();
+void circulant_placement();
 void file_placement();
 
 long **translation;	///< A matrix containing the simulation nodes for each trace task.
@@ -101,6 +102,9 @@ void read_trace(){
 			break;
 		case ICUBE_PLACE:
 			icube_placement();
+			break;
+		case CIRC_PLACE:
+			circulant_placement();
 			break;
 		case FILE_PLACE:
 			file_placement();
@@ -796,6 +800,44 @@ printf("nodes    %d x %d x %d\n",pnodes_x, pnodes_y, pnodes_z);
 			printf("(%d,%d,%d)     %d, %d -> %d\n",tx,ty,tz,i,j,d);
 			network[d].source=OTHER_SOURCE;
 		}
+}
+
+/**
+* Places the tasks in a nearly square partition of a circulant graph.
+*/
+void circulant_placement(){
+	long i, j, n, t; // indexes of he loops and translation to node and task.
+	long task_non_counted=0;	// number of skipped tasks
+	long *task;					// array containing a list of skipped tasks
+	long *node;					// status of the nodes 0: not used yet, 1 already used.
+	
+	task=alloc(nprocs*sizeof(long));
+	node=alloc(nprocs*sizeof(long));
+	for (i=0; i<nprocs; i++)
+		node[i]=0;
+
+	for (j=0; j<nodes_y; j++){
+		for (i=0; i<nodes_x; i++){
+			t=(j*nodes_x)+i;
+			n=((j*s2)%nprocs)+i;
+			if(node[n]){	// this node is already in use, need to skip the task for later.
+				task[task_non_counted]=t;
+				task_non_counted++;
+			} else {	//asign node to task
+				node[n]=1;
+				translation[t][0]=n;
+				network[n].source=OTHER_SOURCE;
+			}
+		}
+	}
+	j=0;
+	for (i=0; i<task_non_counted; i++){
+		while(node[j])	// look for the next free node
+			j++;
+		translation[task[i]][0]=j;
+		node[j=1];
+	}
+	printf ("%d missplaced nodes\n", task_non_counted);
 }
 
 /**

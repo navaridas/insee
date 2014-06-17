@@ -128,6 +128,14 @@ void init_functions (void) {
 			neighbor = torus_neighbor;
 			calc_rr = mesh_rr;
 			break;
+		case CIRC_PK:
+			neighbor = circ_pk_neighbor;
+			calc_rr = circ_pk_rr;
+			break;
+		case CIRCULANT:
+			neighbor = circulant_neighbor;
+			calc_rr = circulant_rr;
+			break;
 		case MIDIMEW:
 			neighbor = midimew_neighbor;
 			calc_rr = midimew_rr;

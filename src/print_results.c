@@ -237,6 +237,14 @@ void print_results(time_t start_time, time_t end_time) {
 				printf("zy=%d", sk_zy);
 			printf("\n");
 		}
+		
+		if (topo == CIRC_PK){
+			printf("                                  a=%d, k=%d, adjacency: %d, %d\n\n",a,k,s1,s2);
+		}
+		
+		if (topo == CIRCULANT){
+			printf("                                  with adjacency: %d, %d\n\n",1,step);
+		}
 	}
 	else if (topo == FATTREE){
 		printf(" %ld-ary %ld-tree\n",radix/2,nstages);

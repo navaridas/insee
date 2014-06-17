@@ -280,11 +280,15 @@ void coords_icube (long ad, long *cx, long *cy, long *cz);
 long torus_neighbor(long ad, dim wd, way ww);
 long midimew_neighbor(long ad, dim wd, way ww);
 long dtt_neighbor(long ad, dim wd, way ww);
+long circulant_neighbor(long ad, dim wd, way ww);
+long circ_pk_neighbor(long ad, dim wd, way ww); 
 
 routing_r torus_rr (long source, long destination);
 routing_r torus_rr_unidir (long source, long destination);
 routing_r mesh_rr (long source, long destination);
 routing_r midimew_rr (long source, long destination);
+routing_r circulant_rr (long source, long destination);
+routing_r circ_pk_rr (long source, long destination);
 routing_r dtt_rr (long source, long destination);
 routing_r dtt_rr_unidir (long source, long destination);
 routing_r icube_rr (long source, long destination);
@@ -322,6 +326,18 @@ void results_partial(void);
 void save_batch_results();
 void print_batch_results(batch_t *b);
 void print_batch_results_vast(batch_t *b);
+
+/* In circulant.c */
+extern long step;	// 2nd dimension of a circulant graph
+extern long twist;
+extern long rows;
+
+/* In circ_pk.c */
+long gcd(long i, long n);
+long inverse(long i, long n);
+extern long a, k;
+extern long s1, s2;
+extern long k_inv;
 
 /* In dtt.c */
 extern long sk_xy, sk_xz, sk_yx, sk_yz, sk_zx, sk_zy; // Skews for twisted torus

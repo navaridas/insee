@@ -158,6 +158,8 @@ literal_t pattern_l[] = {
 */
 literal_t topology_l[] = {
 	{ MIDIMEW,	"midimew"},
+	{ CIRCULANT,"circulant"},
+	{ CIRC_PK,	"circpk"},
 	{ TWISTED,	"ttorus"},
 	{ TORUS,	"torus"},
 	{ MESH,		"mesh"},
@@ -710,7 +712,40 @@ void verify_conf(void) {
 		printf("WARNING: only bidirectional icubes implemented!!!\n");
 		nways=2;
 	}
-
+	if (topo == CIRC_PK){
+		if (ndim!=2 ){
+			panic("WARNING: only 2D circulant graphs implemented so far!!!\n");
+		}
+		a = nodes_x;
+		k = nodes_y;
+		
+		if (gcd(a,k)!=1)
+			panic("Greatest common divisor of a and k is not 1");
+		k_inv = inverse(k, a);
+		
+		s1 = 1;
+		s2 = 2*k*a-1;
+		
+		nodes_x=2*a*a;
+		nodes_y=1;	// to calculate correctly y#the total number of nodes
+	}
+	
+	if (topo == CIRCULANT){
+		if (ndim!=2 ){
+			panic("WARNING: only 2D circulant graphs implemented so far!!!\n");
+		}
+		step=nodes_y;	// the distance to the second dimension of adjacency
+		nodes_y=1;	// to calculate correctly y#the total number of nodes
+	
+		twist=nodes_x%step;
+		rows= nodes_x/step;
+		
+		if (twist>step/2) {
+			twist=twist-step;
+			rows=rows++;
+		}
+	}
+	
 	if (topo > CUBE && nways!=1){
 		printf("WARNING: nways has no sense in indirect topologies !!!\n");
 		nways=1;

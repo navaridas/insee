@@ -86,8 +86,10 @@ typedef enum bool_t {
 */
 typedef enum topo_t {
 	// Original fsin topologies
-	TORUS, MESH, MIDIMEW, TWISTED,
-	// Direct topologies
+	TORUS, MESH, 
+	// Proposed/evaluated direct topologies
+	MIDIMEW, TWISTED, CIRCULANT, CIRC_PK, 
+	// Embraces all direct topologies
 	DIRECT,
 	// Other cube-based topologies
 	ICUBE, CUBE,
@@ -189,7 +191,7 @@ typedef enum inj_mode_t {
 * Definition of task placement types for trace driven.
 */
 typedef enum placement_t{
-	CONSECUTIVE_PLACE, SHUFFLE_PLACE, RANDOM_PLACE, SHIFT_PLACE, ROW_PLACE, COLUMN_PLACE, QUADRANT_PLACE, ICUBE_PLACE, DIAGONAL_PLACE, FILE_PLACE
+	CONSECUTIVE_PLACE, SHUFFLE_PLACE, RANDOM_PLACE, SHIFT_PLACE, ROW_PLACE, COLUMN_PLACE, QUADRANT_PLACE, ICUBE_PLACE, DIAGONAL_PLACE, CIRC_PLACE, FILE_PLACE
 } placement_t;
 
 /**
