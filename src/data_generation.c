@@ -344,7 +344,7 @@ void generate_pkt(long i) {
                                         d = (long)(1.0*nprocs*rand()/(RAND_MAX+1.0));
                         } while (d == i);
 			break;
-		case LOCAL:
+		case LOCAL:	// 50% distance 1, 25% distance 2-3, 12.5% distance 4-7, 12.5% rest of the network.
 			do {
 				long	dst[3]={0,0,0},	// the coordinates of the destination.
 						n,		// the dimension
@@ -723,13 +723,23 @@ void init_injection	(void) {
 			case REVERSAL:
 				d = reversal(i, nprocs);
 				break;
-			case UNIFORM:
 			case HOTREGION:
+				if (nprocs<=8)
+					panic("Hot region requires more than 8 nodes");
+				break;
+			case UNIFORM:
 			case SEMI:
 			case HOTSPOT:
 				break;
 			case LOCAL:
-				// this is done for each node, but it is not necessary, may be moved to other place
+				if (topo!=TORUS || topo!=SPINNAKER)
+					printf("WARNING: topology is not a torus, LOCAL traffic may not work as originally intended!\n");
+				if (nodes_x<16)
+					printf("WARNING: nodes_x<16, LOCAL traffic may not work as originally intended!\n");
+				if (ndim>=2 && nodes_y<16)
+					printf("WARNING: nodes_y<16, LOCAL traffic may not work as originally intended!\n");
+				if (ndim>=3 && nodes_z<16)
+					printf("WARNING: nodes_z<16, LOCAL traffic may not work as originally intended!\n");
 				break;
 			case POPULATION:
 				if (i==nprocs-1)
