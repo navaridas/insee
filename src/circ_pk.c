@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <math.h>
 #include <stdlib.h>
 
-long a, k;		///> the two parameters of the topology. 
+long a, k;		///> the two parameters of the topology.
 long k_inv; 	///> the inverse of k used for routing
 long s1, s2;	///> the steps. s1=1, s2=2*k*a-1;
 
@@ -64,11 +64,11 @@ struct Triple Euclid(long m, long n) {
 		t.m = 0;
 		return t;
 	}
-	
+
 	q = n % m;
 	r = n/m;
 	v = Euclid(q,m);
-	
+
 	d1 = v.d;
 	k1 = v.k;
 	m1 = v.m;
@@ -76,7 +76,7 @@ struct Triple Euclid(long m, long n) {
 	w.d = d1;
 	w.k = m1;
 	w.m = k1 - m1*r;
-	
+
 	return w;
 }
 
@@ -85,19 +85,19 @@ struct Triple Euclid(long m, long n) {
 *
 * @param m One integer
 * @param n One integer
-* @return An integer with the greatest common divisor of i and n Triple containing the 
+* @return An integer with the greatest common divisor of i and n Triple containing the
 */
 long gcd(long m, long n){
 	struct Triple z;
-	
+
 	if (m==n)
 		return m;
-		
+
 	if (m>n)
 		z = Euclid(n, m);
 	else
 		z = Euclid(m, n);
-		
+
 	return z.d;
 }
 
@@ -126,7 +126,7 @@ long inverse(long i, long n){
 struct Double map(long m){
 	struct Double v;
 	long q, r, c;
-	
+
 	if(m <= a-1){
 		v.x = m;
 		v.y = 0;
@@ -135,7 +135,7 @@ struct Double map(long m){
 		v.x = m-NUMNODES; v.y = 0;
 	}
 	else{
-		q = m/a; r = m%a; 
+		q = m/a; r = m%a;
 		if(q%2 == 0){
 			q = q-1; r = r+a;
 		}
@@ -148,24 +148,24 @@ struct Double map(long m){
 			v.x = r-2*a+c; v.y = a-c;
 		}
 	}
-	
+
 	return v;
 }
 
 /**
 * Obtains a neighbor node.
-* 
+*
 * @param ad A node address.
 * @param wd A dimension (X or Y).
 * @param ww A way (UP or DOWN).
-* @return The address of the neighbor in that direction and way; 
+* @return The address of the neighbor in that direction and way;
 */
-long  circ_pk_neighbor(long ad, dim wd, way ww) 
+long  circ_pk_neighbor(long ad, dim wd, way ww)
 {
 	long res;
 
 	switch (wd) {
-		case D_X:	//	Clockwise and counterclockwise neightbours 
+		case D_X:	//	Clockwise and counterclockwise neightbours
 			if (ww == DOWN)
 				res = (NUMNODES+ad-s1)%NUMNODES;
 			else
@@ -186,7 +186,7 @@ long  circ_pk_neighbor(long ad, dim wd, way ww)
 
 /**
 * Generates the routing record.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
@@ -197,15 +197,15 @@ routing_r circ_pk_rr (long source, long destination){
 	struct Double v0, v1;
 	long A[9], B[9];
 	long weight[9];
-	
+
 	long minA[9];
 	long minB[9];
 	long minw;
 	long paths;
 
 	long i,t;
-	
-	//printf("\n==== kk:  %d --> %d ====\n",source, destination);
+
+	//printf("\n==== kk:  %ld --> %ld ====\n",source, destination);
 	res.rr=alloc(ndim*sizeof(long));
 
 	if (source == destination)
@@ -221,35 +221,35 @@ routing_r circ_pk_rr (long source, long destination){
 
 	dx = x1-x0;
 	dy = y1-y0;
-	
+
 	A[0] = 0;
 	B[0] = 0;
 	weight[0] = abs(dx+A[0])+abs(dy+B[0]);
-	
+
 	A[1] = a-k_inv;
 	B[1] = a+k_inv;
 	weight[1] = abs(dx+A[1])+abs(dy+B[1]);
-	
+
 	A[2] = -A[1];
 	B[2] = -B[1];
 	weight[2] = abs(dx+A[2])+abs(dy+B[2]);
-	
+
 	A[3] = 2*a-k_inv;
 	B[3] = k_inv;
 	weight[3] = abs(dx+A[3])+abs(dy+B[3]);
-	
+
 	A[4] = -A[3];
 	B[4] = -B[3];
 	weight[4] = abs(dx+A[4])+abs(dy+B[4]);
-	
+
 	A[5] = -a;
 	B[5] = a;
 	weight[5] = abs(dx+A[5])+abs(dy+B[5]);
-	
+
 	A[6] = -A[5];
 	B[6] = -B[5];
 	weight[6] = abs(dx+A[6])+abs(dy+B[6]);
-	
+
 	if(k_inv < a-k_inv) {
 		A[7] = -k_inv;
 		B[7] = 2*a+k_inv;
@@ -259,20 +259,18 @@ routing_r circ_pk_rr (long source, long destination){
 		B[7] = a-k_inv;
 	}
 	weight[7] = abs(dx+A[7])+abs(dy+B[7]);
-	
+
 	A[8] = -A[7];
 	B[8] = -B[7];
 	weight[8] = abs(dx+A[8])+abs(dy+B[8]);
-	
+
 	//Let's decide which way is better
 	minA[0]=A[0];
 	minB[0]=B[0];
 	minw=weight[0];
 	paths=1;
-	
-	//printf("kk:  %d, %d (%d) ::: %d, %d, %d ::: %d, %d, %d\n",A[0],B[0],weight[0],dx, dx+A[0], abs(dx+A[0]),dy, dy+B[0], abs(dy+B[0]));
+
 	for (i=1; i<9; i++){
-	//printf("kk:  %d, %d (%d) ::: %d, %d, %d ::: %d, %d, %d\n",A[i],B[i],weight[i],dx, dx+A[i], abs(dx+A[i]),dy, dy+B[i], abs(dy+B[i]));
 		if  (weight[i]==minw){
 			minA[paths]=A[i];
 			minB[paths]=B[i];
@@ -286,12 +284,13 @@ routing_r circ_pk_rr (long source, long destination){
 		}
 	}
 	t=rand()%paths;
-	
+
 	res.rr[D_X] = dx+minA[t];
 	res.rr[D_Y] = -(dy+minB[t]);
-	
+
 	res.size = minw;
-	//printf("kkKKkk:  %d, %d (%d)\n",res.rr[D_X],res.rr[D_Y],res.size);
-	
+	//printf("kkKKkk:  %ld, %ld (%ld)\n",res.rr[D_X],res.rr[D_Y],res.size);
+
 	return res;
 }
+

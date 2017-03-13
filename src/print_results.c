@@ -34,7 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /**
 * An array containing all the headers for runtime printing.
-* 
+*
 * @see pheaders
 */
 char * pheader[] =
@@ -53,7 +53,7 @@ char * pheader[] =
 
 /**
 * An array containing all batch results headers.
-* 
+*
 * @see bheaders
 */
 char *bheader[] =
@@ -75,7 +75,7 @@ char *bheader[] =
 
 /**
 * Print headers at simulation start.
-* 
+*
 * @see pheaders.
 */
 void print_headers(void) {
@@ -86,14 +86,14 @@ void print_headers(void) {
 			printf("%s", pheader[i]);
 	printf("\n\n");
 	if (pheaders & 1024)
-	    fprintf(fp, "Monitoring node %d\n\n", monitored);
+	    fprintf(fp, "Monitoring node %ld\n\n", monitored);
 }
 
 /**
 * Print partial stats at runtime.
 *
 * Besides write the evolution of the monitored node in the '.mon' file.
-* 
+*
 * @see pheaders.
 * @see file.
 */
@@ -130,7 +130,7 @@ void print_partials(void) {
 	if(pheaders & 256)
 		printf(", %9ld", max_inj_delay);
 	if(pheaders & 512)
-		printf(", %10.0lf, %11.0lf", congestion_limit, global_q_u_current);
+		printf(", %10ld, %1.10lf", congestion_limit, global_q_u_current);
 	printf("\n");
 	if(pheaders & 1024){
 		fprintf(fp, "%"PRINT_CLOCK, sim_clock);
@@ -156,7 +156,7 @@ void print_results(time_t start_time, time_t end_time) {
 	channel e;
 	unsigned long cn_size = 1024;
 	char computer_name[1024];
-	char *topo_s, *vc_s, *routing_s, *pattern_s, *ctype_s, *reqtype_s, *arbtype_s, *inj_s, *placement_s;
+	char *topo_s, *vc_s, *routing_s, *pattern_s, *ctype_s, *reqtype_s, *arbtype_s, *inj_s, *placement_s, *cpu_units_s;
 	CLOCK_TYPE copyclock;
 
 	char map[256], hst[256];
@@ -165,6 +165,7 @@ void print_results(time_t start_time, time_t end_time) {
 	double res_sq[13]={0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 	literal_name(pattern_l, &pattern_s, pattern);
+	literal_name(cpu_units_l, &cpu_units_s, cpu_units);
 	literal_name(topology_l, &topo_s, topo);
 	literal_name(vc_l, &vc_s, vc_management);
 	literal_name(routing_l, &routing_s, routing);
@@ -187,24 +188,31 @@ void print_results(time_t start_time, time_t end_time) {
 	printf("\n===============================================================================================================================================================\n\n");
 
 	printf("Program Started at:               %s", asctime(localtime(&start_time)));
-	printf("Ended at:                         %s", asctime(localtime(&end_time)));
+	if (interrupted){
+        report_receiving_tasks();
+        printf("** Interrupted ** at:             %s", asctime(localtime(&end_time)));
+	}
+    else if (aborted)
+        printf("** Aborted ** at:                 %s", asctime(localtime(&end_time)));
+	else
+        printf("Execution completed at:           %s", asctime(localtime(&end_time)));
 	printf("On machine:                       %s\n", computer_name);
-	printf("Simulation clock:                 %"PRINT_CLOCK"\n", sim_clock);
+	printf("Simulation clock (cycles/us):     %"PRINT_CLOCK" %10.3lf\n", sim_clock, (8.0*sim_clock*phit_len)/link_bw);
 	printf("Total execution time:             ");
 	i=end_time-start_time;
 	if (i>86400){
-		printf("%d days, ",i/86400);
+		printf("%ld days, ",i/86400);
 		i=i%86400;
 	}
 	if (i>3600){
-		printf("%d hours, ",i/3600);
+		printf("%ld hours, ",i/3600);
 		i=i%3600;
 	}
 	if (i>60){
-		printf("%d mins, ",i/60);
+		printf("%ld mins, ",i/60);
 		i=i%60;
 	}
-	printf("%d secs\n",i);
+	printf("%ld secs\n",i);
 	printf("Cycles per Second:                %f\n\n", 1.0*sim_clock/(end_time-start_time));
 
 	// Random seed
@@ -224,47 +232,47 @@ void print_results(time_t start_time, time_t end_time) {
 		if (topo == TWISTED){
 			printf("        with skews:                     ");
 			if (sk_xy!=0)
-				printf("xy=%d, ", sk_xy);
+				printf("xy=%ld, ", sk_xy);
 			if (sk_xz!=0)
-				printf("xz=%d, ", sk_xz);
+				printf("xz=%ld, ", sk_xz);
 			if (sk_yx!=0)
-				printf("yx=%d, ", sk_yx);
+				printf("yx=%ld, ", sk_yx);
 			if (sk_yz!=0)
-				printf("yz=%d, ", sk_yz);
+				printf("yz=%ld, ", sk_yz);
 			if (sk_zx!=0)
-				printf("zx=%d, ", sk_zx);
+				printf("zx=%ld, ", sk_zx);
 			if (sk_zy!=0)
-				printf("zy=%d", sk_zy);
+				printf("zy=%ld", sk_zy);
 			printf("\n");
 		}
-		
+
 		if (topo == CIRC_PK){
-			printf("                                  a=%d, k=%d, adjacency: %d, %d\n\n",a,k,s1,s2);
+			printf("                                  a=%ld, k=%ld, adjacency: %ld, %ld\n\n",a,k,s1,s2);
 		}
-		
+
 		if (topo == CIRCULANT){
-			printf("                                  with adjacency: %d, %d\n\n",1,step);
+			printf("                                  with adjacency: %ld, %ld\n\n",1L,step);
 		}
 	}
 	else if (topo == FATTREE){
 		printf(" %ld-ary %ld-tree\n",radix/2,nstages);
-		printf("nodes, switches(radix):           %-10ld %ld (%d)\n", nprocs, NUMNODES - nprocs, radix);
+		printf("nodes, switches(radix):           %-10ld %ld (%ld)\n", nprocs, NUMNODES - nprocs, radix);
 	}
 	else if (topo == SLIMTREE){
-		printf(" %d:%d-ary %ld-slimtree\n",stDown,stUp,nstages);
-		printf("nodes, switches(radix):           %-10ld %-10ld (%d)\n", nprocs, NUMNODES - nprocs, radix);
+		printf(" %ld:%ld-ary %ld-slimtree\n",stDown,stUp,nstages);
+		printf("nodes, switches(radix):           %-10ld %-10ld (%ld)\n", nprocs, NUMNODES - nprocs, radix);
 	}
 	else if (topo == THINTREE){
-		printf(" %d:%d-ary %ld-thin-tree\n",stDown,stUp,nstages);
-		printf("nodes, switches(radix):           %-10ld %-10ld (%d)\n", nprocs, NUMNODES - nprocs, radix);
+		printf(" %ld:%ld-ary %ld-thin-tree\n",stDown,stUp,nstages);
+		printf("nodes, switches(radix):           %-10ld %-10ld (%ld)\n", nprocs, NUMNODES - nprocs, radix);
 	}
 	else if (topo == ICUBE){
-		printf("%dx%dx%d\n",nodes_x,nodes_y,nodes_z);
+		printf("%ldx%ldx%ld\n",nodes_x,nodes_y,nodes_z);
 		printf("nodes per switch, parallel links: %-10ld %-10ld\n", nodes_per_switch, links_per_direction);
-		printf("nodes, switches(radix):           %-10ld %-10ld (%d)\n", nprocs, NUMNODES - nprocs, radix);
+		printf("nodes, switches(radix):           %-10ld %-10ld (%ld)\n", nprocs, NUMNODES - nprocs, radix);
 	}
 	printf("Random link failures:             %ld\n\n",faults);
-	
+
 	printf("Operation modes Inj-Req-Arb-Con:  %s %s %s %s\n", inj_s, reqtype_s, arbtype_s, ctype_s);
 	printf("Traf./Inj. queue len (pkt/ph):    %ld/%ld, %ld/%ld, %ld injectors\n", (tr_ql-1)/pkt_len, tr_ql-1, (inj_ql-1)/pkt_len, inj_ql-1, ninj);
 	printf("VC management:                    %s, %ld VCs; ", vc_s, nchan);
@@ -304,14 +312,15 @@ void print_results(time_t start_time, time_t end_time) {
 	printf("Traffic pattern:                  EXECUTION DRIVEN, packets of %ld phits\n", pkt_len);
 #else
 	if (pattern == TRACE) {// Traffic details.
-		printf("Traffic from trace:               %d instances of %s, packets of %ld phits\n", trace_instances, trcfile, pkt_len);
+		printf("Traffic from trace:               %ld instances of %s, packets of %ld phits (%ld bytes each)\n", trace_instances, trcfile, pkt_len, phit_len);
 		if (placement==SHIFT_PLACE)
-			printf("Placement:                        %s %d\n", placement_s, shift);
+			printf("Placement:                        %s %ld\n", placement_s, shift);
 		else if (placement==FILE_PLACE)
 			printf("Placement:                        %s %s\n", placement_s, placefile);
 		else
 			printf("Placement:                        %s\n", placement_s);
 
+	    printf("Link_bandwidth, CPU_event_units:  %ld Mbps, %s\n", link_bw, cpu_units_s);
 	    printf("Background uniform traffic at:    %1.5f\n", load);
 	}
 	else
@@ -321,9 +330,9 @@ void print_results(time_t start_time, time_t end_time) {
 			}
 		else{
 		    printf("Traffic pattern:                  %s at load %1.5f, packets of %ld phits\n", pattern_s, load, pkt_len);
-			printf("Trigger rate, packets triggered:  %1.5f %1.5f", trigger_rate, trigger_min);
+			printf("Trigger rate, packets triggered:  %1.5f %5ld", trigger_rate, trigger_min);
 			if (trigger_min!=trigger_max)
-			    printf("..%1.5f", trigger_max);
+			    printf("..%5ld", trigger_max);
 			printf("\nWarm Up Period Prov., Used:       %"PRINT_CLOCK " + %"PRINT_CLOCK", %"PRINT_CLOCK"\n", warm_up_period, max_conv_time, warmed_up);
 			printf("Conv. sampling period, threshold: %"PRINT_CLOCK", %lf\n", conv_period, threshold);
 			printf("Sample count, size, min pkts:     %ld x %"PRINT_CLOCK", %ld\n", samples, batch_time, min_batch_size);
@@ -384,12 +393,14 @@ void print_results(time_t start_time, time_t end_time) {
 	printf("\n===============================================================================================================================================================\n");
 
 	// Batch results
-	printf("\n  #");
-	for ( i=0; i<13; i++)
-		if (bheaders & (1 << i))
-			printf("%s",bheader[i]);
+	if (reseted>0) {
+        printf("\n  #");
+        for ( i=0; i<13; i++)
+            if (bheaders & (1 << i))
+                printf("%s",bheader[i]);
+        copyclock= (CLOCK_TYPE) 0L;
+    }
 
-	copyclock= (CLOCK_TYPE) 0L;
 	for (i=0; i<reseted; i++) {
 		// Batch number
 		printf("\n%3ld", i);
@@ -466,7 +477,7 @@ void print_results(time_t start_time, time_t end_time) {
 		copyclock = sim_clock - last_reset_time;
 #endif
 
-	if(pattern!=TRACE){ // In trace-driven there's only 1 sample: no AVG nor STD.
+	if(pattern!=TRACE && samples>1){ // In trace-driven there's only 1 sample: no AVG nor STD.
 		printf("\n\nAVG");
 		if (bheaders & 1)
 			printf(", %10.2f", (res[0]/samples));
@@ -522,8 +533,13 @@ void print_results(time_t start_time, time_t end_time) {
 			printf(", %10.2f", sqrt(fabs((res_sq[11] - (res[11]*res[11]) / samples) / (samples-1)) ));
 		if (bheaders & 4096)
 			printf(", %10.2f", sqrt(fabs((res_sq[12] - (res[12]*res[12]) / samples) / (samples-1)) ));
-		printf("\n");
 	}
+	printf("\n");
+
+    if (interrupted)
+        printf("** Execution interrupted **\n");
+    else if (aborted)
+        printf("** Execution aborted **\n");
 
 	if(plevel & 64) {
 		fprintf(fp, "\n\nSource ports:        ");
@@ -542,7 +558,7 @@ void print_results(time_t start_time, time_t end_time) {
 	if (plevel & 1 || plevel & 2){
 // Maps for all the network
 #if (EXECUTION_DRIVEN != 0)
-		sprintf(map, "%s.%d.map", file, num_executions);
+		sprintf(map, "%s.%ld.map", file, num_executions);
 #else
 		sprintf(map, "%s.map", file);
 #endif
@@ -594,7 +610,7 @@ void print_results(time_t start_time, time_t end_time) {
 
 // Histogram for all nodes
 #if (EXECUTION_DRIVEN != 0)
-		sprintf(hst, "%s.%d.hst", file, num_executions);
+		sprintf(hst, "%s.%ld.hst", file, num_executions);
 #else
 		sprintf(hst, "%s.hst", file);
 #endif
@@ -633,8 +649,9 @@ void print_results(time_t start_time, time_t end_time) {
 	}
 
 #if (EXECUTION_DRIVEN != 0)
-	sprintf(map, "%s.%d.mon", file, ++num_executions);
+	sprintf(map, "%s.%ld.mon", file, ++num_executions);
 	if((fp = fopen(map, "w")) == NULL)
 		printf("WARNING: cannot create monitored output file");
 #endif
 }
+

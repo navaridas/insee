@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /**
 * Initializes an event queue.
-* 
+*
 * @param q a pointer to the queue to be initialized.
 */
 void init_event (event_q *q) {
@@ -43,7 +43,7 @@ void init_event (event_q *q) {
 
 /**
 * Adds an event to a queue.
-* 
+*
 * @param q a pointer to a queue.
 * @param i the event to be added to q.
 */
@@ -52,7 +52,7 @@ void ins_event (event_q *q, event i) {
 	e=malloc(sizeof(event_n));
 	e->ev=i;
 	e->next = NULL;
-	
+
 	if(q->head==NULL){ // Empty Queue
 		q->head = e;
 		q->tail = e;
@@ -68,7 +68,7 @@ void ins_event (event_q *q, event i) {
 *
 * Takes an event an increases its packet count.
 * When it reaches the length of the event, this is erased from the queue.
-* 
+*
 * @param q A pointer to a queue.
 * @param i A pointer to the event to do.
 */
@@ -87,9 +87,38 @@ void do_event (event_q *q, event *i) {
 	}
 }
 
+
+/**
+* Uses the first event in the queue.
+*
+* Takes an event an increases its packet count.
+* When it reaches the length of the event, this is erased from the queue.
+*
+* @param q A pointer to a queue.
+* @param i A pointer to the event to do.
+* @param i A pointer to the event to do.
+*/
+void do_event_n_times (event_q *q, event *i, CLOCK_TYPE increment) {
+	event_n *e;
+	if (q->head==NULL)
+		panic("Using event from an empty queue");
+	e = q->head;
+	e->ev.count+=increment;
+	*i = e->ev;
+	if (i->count == i->length){
+		q->head=q->head->next;
+		free (e);
+		if (q->head==NULL)
+			q->tail=NULL;
+	}
+	if (i->count > i->length){
+		panic("Increment in do_event_n_times exceeded the count");
+	}
+}
+
 /**
 * Looks at the first event in a queue.
-* 
+*
 * @param q A pointer to the queue.
 * @return The first event in the queue (without using nor modifying it).
 */
@@ -101,7 +130,7 @@ event head_event (event_q *q) {
 
 /**
 * Deletes the first event in a queue.
-* 
+*
 * @param q A pointer to the queue.
 */
 void rem_head_event (event_q *q) {
@@ -116,7 +145,7 @@ void rem_head_event (event_q *q) {
 
 /**
 * Is a queue empty?.
-* 
+*
 * @param q A pointer to the queue.
 * @return TRUE if the queue is empty FALSE in other case.
 */
@@ -126,12 +155,12 @@ bool_t event_empty (event_q *q){
 
 #if (TRACE_SUPPORT > 1)
 
-/** 
+/**
 * Initializes all ocurred events lists.
 *
 * There is a list in each router for each posible source of messages.
 * Increases memory usage but reduces look-up time for trace driven simulation. For large-scale systems, this can be a limiting factor.
-* 
+*
 * @param l A pointer to the list to be initialized.
 */
 void init_occur (event_l **l){
@@ -145,14 +174,14 @@ void init_occur (event_l **l){
 *
 * If the event is in the list, then its count is increased. Otherwise a new event is created
 * in the occurred event list.
-* 
+*
 * @param l A pointer to a list.
 * @param i The event to be added.
 */
 void ins_occur (event_l **l, event i){
 	event_n *e = (*l)[i.pid].first;
 	event_n *aux = NULL;
-	
+
 	if (e==NULL) {	// List is Empty
 		// Create a new occurred event
 		aux=malloc(sizeof(event_n));
@@ -162,15 +191,15 @@ void ins_occur (event_l **l, event i){
 		(*l)[i.pid].first = aux;
 		return;
 	}
-	
-	if (e->ev.type == i.type && e->ev.pid == i.pid && 
+
+	if (e->ev.type == i.type && e->ev.pid == i.pid &&
 		e->ev.task == i.task && e->ev.length == i.length &&
-		e->ev.count < e->ev.length)	{ 
+		e->ev.count < e->ev.length)	{
 		// The occurence is the first element.
 		e->ev.count++;
 		return;
 	}
-	
+
 	while (e->next!=NULL) {
 		if (e->next->ev.type == i.type && e->next->ev.pid == i.pid &&
 			e->next->ev.task == i.task && e->next->ev.length == i.length &&
@@ -181,7 +210,7 @@ void ins_occur (event_l **l, event i){
 		}
 		e = e->next;
 	}
-	
+
 	// It is not in the list, so we create a new occurred event
 	aux = malloc(sizeof(event_n));
 	i.count = 1;
@@ -195,7 +224,7 @@ void ins_occur (event_l **l, event i){
 *
 * If it has totally occurred, this is, the event is in the list and its count is equal to
 * its length, then it is deleted from the list.
-* 
+*
 * @param l a pointer to a list.
 * @param i the event we are seeking for.
 * @return TRUE if the event has been occurred, elseway FALSE
@@ -203,17 +232,17 @@ void ins_occur (event_l **l, event i){
 bool_t occurred (event_l **l, event i){
 	event_n *e = (*l)[i.pid].first;
 	event_n *aux;
-	
+
 	if (e==NULL)	// List is Empty
-		return FALSE;
+		return B_FALSE;
 	if (e->ev.type == i.type && e->ev.pid == i.pid && e->ev.count == e->ev.length &&
 		e->ev.task == i.task && e->ev.length == i.length) {
 		aux = e->next;
 		free(e);
 		(*l)[i.pid].first = aux;
-		return TRUE;
+		return B_TRUE;
 	}
-	
+
 	while (e->next!=NULL) {
 		if (e->next->ev.type == i.type && e->next->ev.pid == i.pid &&
 			e->next->ev.task == i.task && e->next->ev.length == i.length &&
@@ -222,21 +251,21 @@ bool_t occurred (event_l **l, event i){
 			aux = e->next->next;
 			free(e->next);
 			e->next = aux;
-			return TRUE;
+			return B_TRUE;
 		}
 		e = e->next;
 	}
-	return FALSE;
+	return B_FALSE;
 }
 #endif // Trace support with multilist #occurs
 
 #if (TRACE_SUPPORT == 1)
 
-/** 
+/**
 * Initializes all ocurred events lists.
 *
 * There is only one list in each router.
-* 
+*
 * @param l A pointer to the list to be initialized.
 */
 void init_occur (event_l *l){
@@ -248,14 +277,14 @@ void init_occur (event_l *l){
 *
 * If the event is in the list, then its count is increased. Otherwise a new event is created
 * in the occurred event list.
-* 
+*
 * @param l A pointer to a list.
 * @param i The event to be added.
 */
 void ins_occur (event_l *l, event i){
 	event_n *e = (*l).first;
 	event_n *aux = NULL;
-	
+
 	if (e==NULL) {	// List is Empty
 		// Create a new occurred event
 		aux=malloc(sizeof(event_n));
@@ -265,15 +294,15 @@ void ins_occur (event_l *l, event i){
 		(*l).first = aux;
 		return;
 	}
-	
-	if (e->ev.type == i.type && e->ev.pid == i.pid && 
+
+	if (e->ev.type == i.type && e->ev.pid == i.pid &&
 		e->ev.task == i.task && e->ev.length == i.length &&
-		e->ev.count < e->ev.length)	{ 
+		e->ev.count < e->ev.length)	{
 		// The occurence is the first element.
 		e->ev.count++;
 		return;
 	}
-	
+
 	while (e->next!=NULL) {
 		if (e->next->ev.type == i.type && e->next->ev.pid == i.pid &&
 			e->next->ev.task == i.task && e->next->ev.length == i.length &&
@@ -284,7 +313,7 @@ void ins_occur (event_l *l, event i){
 		}
 		e = e->next;
 	}
-	
+
 	// There is not in the list, so we create a new occurred event
 	aux = malloc(sizeof(event_n));
 	i.count = 1;
@@ -298,7 +327,7 @@ void ins_occur (event_l *l, event i){
 *
 * If it has totally occurred, this is, the event is in the list and its count is equal to
 * its length, then it is deleted from the list.
-* 
+*
 * @param l a pointer to a list.
 * @param i the event we are seeking for.
 * @return TRUE if the event has been occurred, elseway FALSE
@@ -306,17 +335,17 @@ void ins_occur (event_l *l, event i){
 bool_t occurred (event_l *l, event i){
 	event_n *e = (*l).first;
 	event_n *aux;
-	
+
 	if (e==NULL)	// List is Empty
-		return FALSE;
+		return B_FALSE;
 	if (e->ev.type == i.type && e->ev.pid == i.pid && e->ev.count == e->ev.length &&
 		e->ev.task == i.task && e->ev.length == i.length) {
 		aux = e->next;
 		free(e);
 		(*l).first = aux;
-		return TRUE;
+		return B_TRUE;
 	}
-	
+
 	while (e->next!=NULL) {
 		if (e->next->ev.type == i.type && e->next->ev.pid == i.pid &&
 			e->next->ev.task == i.task && e->next->ev.length == i.length &&
@@ -325,12 +354,13 @@ bool_t occurred (event_l *l, event i){
 			aux = e->next->next;
 			free(e->next);
 			e->next = aux;
-			return TRUE;
+			return B_TRUE;
 		}
 		e = e->next;
 	}
-	return FALSE;
+	return B_FALSE;
 }
 #endif // Trace support with single list #occurs
 
 #endif
+

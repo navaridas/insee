@@ -98,3 +98,4 @@ routing_r midimew_rr (long source, long destination) {
 	res.size = abs(res.rr[D_X]) + abs(res.rr[D_Y]);
 	return res;
 }
+

@@ -1,4 +1,4 @@
-/** 
+/**
 * @file
 * @brief	Execution driven simulation & Interface with Simics needed definitions.
 */
@@ -41,7 +41,7 @@ unsigned long max_id_ethernet_frame;
 unsigned short num_bits_packet_sequence;
 long mask_eth_id_packet_sequence;
 long mask_eth_id_ethernet_frame;
-#define PACKET_SIZE_IN_BYTES (packet_size_in_phits * phit_size)
+#define PACKET_SIZE_IN_BYTES (packet_size_in_phits * phit_len)
 long fsin_cycle_relation;
 long simics_cycle_relation;
 CLOCK_TYPE fsin_cycle_run; // Ver descripcion en init_exd
@@ -64,7 +64,7 @@ unsigned long long veces_que_entra_FSIN = 0;
 unsigned long long timestamp_init = 0;
 unsigned long long timestamp_end = 0;
 
-//Estructura que guarda la informacion de cada conexion relacionada con 
+//Estructura que guarda la informacion de cada conexion relacionada con
 //la sincronización guarda MAC y el timestamp que ha enviado
 struct sync {
 	char StationAddress[6];
@@ -72,7 +72,7 @@ struct sync {
 };
 list * list_sync = NULL;
 
-//Estructura que guarda la informacion de cada conexion a switch identificada 
+//Estructura que guarda la informacion de cada conexion a switch identificada
 //por el socket por el que se conecta y la direccion MAC de sus paquetes
 struct arp_record {
 	char StationAddress[6];
@@ -86,7 +86,7 @@ list * lista = NULL;
 //Estructura que guarda la informacion de un paquete recibido
 struct packet {
 	char * buffer;	//el paquete recibido y ocho bytes por el principio donde se pondra el tiempo
-	//de espera en la cola de inyeccion de Simics y despues dos bytes por el 
+	//de espera en la cola de inyeccion de Simics y despues dos bytes por el
 	//principio vacios para anadir la longitud del paquete
 	unsigned short length;//longitud del paquete en si
 	int socket; // por el que ha llegado el paquete
@@ -96,15 +96,15 @@ struct packet {
 	/* Si se tiran phits en algn momento debido a que se llenan los buffers de inyeccion */
 	/* habria que hacer una rutina que cada cierto tiempo limpiase de la cola las tramas */
 	/* ethernet que estuviesen pendientes de llegar por mas de un tiempo razonable */
-	
+
 	struct FSIN_packet * FSIN_packets;
 	/* Array de estructuras del tipo struct FSIN_packet que representan los paquetes en */
 	/* que se divide a una trama ethernet */
-	unsigned short num_FSIN_packets; // el numero de paquetes FSIN en que se ha dividido 
+	unsigned short num_FSIN_packets; // el numero de paquetes FSIN en que se ha dividido
 									 // la trama ethernet
 	unsigned long FSIN_node_source;	// El numero de nodo FSIN de donde proviene esta trama ethernet
 	unsigned long FSIN_node_destination; // El numero de nodo FSIN a donde se mandaran
-										// los paquetes y phits en que se dividira 
+										// los paquetes y phits en que se dividira
 										// esta trama ethernet
 
 };//8 (periodo * num_periodos_espera), 2 (length), length (buf[ ]) = char * buffer
@@ -112,7 +112,7 @@ list * list_packets = NULL;
 
 struct FSIN_packet {
 	unsigned short number_phits; // numero de phits en que se ha dividido el paquete de FSIN
-	unsigned char tail_arrived;	// indica que el phit que contiene la cola ha llegado 
+	unsigned char tail_arrived;	// indica que el phit que contiene la cola ha llegado
 								// a su destino 1 TRUE y 0 FALSE
 	unsigned char packet_generated;	// indica que el paquete se ha generado correctamente y no ha tenido que
 								// esperar para ser generado debido a que el buffer de inyeccion estaba lleno
@@ -133,9 +133,10 @@ void init_exd(long, long, long, long, long);
 /* timestamps del Central y los inyecta en FSIN */
 void run_network_exd(void);
 
-/* Funcion que comprueba si ha llegado un paquete y una trama depues de que haya */ 
+/* Funcion que comprueba si ha llegado un paquete y una trama depues de que haya */
 /* llegado un phit a su destino en FSIN */
 /* Los parametros son el nodo al que ha llegado el phit y el phit en cuestion */
 void SIMICS_phit_away(long, phit);
 
 #endif
+

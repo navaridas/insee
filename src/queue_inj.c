@@ -116,3 +116,4 @@ void inj_rem_queue (inj_queue *q, phit *i) {
 		*i = (q->pos)[q->head];
 	}
 }
+

@@ -268,3 +268,4 @@ enum os_lapi_op_id{
 	LAPI_Barrier=6, // May be LAPI_Gfence
 	LAPI_Alltoall=7 // May be LAPI_AddrInit
 } lapi_operations;
+

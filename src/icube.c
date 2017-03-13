@@ -30,16 +30,15 @@ long links_per_direction;	///< The number of parallel links in each direction.
 
 /**
 * Generates the routing record for an indirect cube  using adaptive routing.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
 */
 routing_r icube_rr (long source, long destination) {
-	long i, j, k, nhops=1;
-	long sx,sy,sz, dx,dy,dz, numhops;
+	long sx,sy=-1,sz=-1, dx,dy=-1,dz=-1;
 	routing_r res;
-	
+
 	res.rr=alloc(ndim*sizeof(long));
 	res.size=2;	// 2 hops: From NIC to first switch + From last switch to NIC.
 
@@ -97,26 +96,25 @@ routing_r icube_rr (long source, long destination) {
 * Deadlock is avoided by considering four isolated meshes and using DOR in each
 * of them. Origins are in nodes (0,0) (X/2, 0) (0, Y/2) and (X/2, Y/2) repectively
 * for each of the meshes. Routing selects the mesh with shorter distance.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
 */
 routing_r icube_4mesh_rr (long source, long destination) {
-	long i, j, k, nhops=1;
-	long sx,sy,sz, dx,dy,dz, p, numhops;
+	long sx,sy=-1, dx,dy=-1, p;
 	routing_r res;
 
 	res.rr=alloc(ndim+1*sizeof(long));
 	res.rr[ndim]=0;
-	
+
 	res.size=2;	// 2 hops: From NIC to first switch + From last switch to NIC.
 
 	sx=network[source].rcoord[D_X];
 	dx=network[destination].rcoord[D_X];
 
 	p= (source % nodes_per_switch) % links_per_direction;
-	
+
 	if (ndim>1){
 		sy=network[source].rcoord[D_Y];
 		dy=network[destination].rcoord[D_Y];
@@ -134,7 +132,7 @@ routing_r icube_4mesh_rr (long source, long destination) {
 		if (p%2)
 			res.rr[D_X] = (nodes_x-res.rr[D_X])*(-1);
  	res.size+=abs(res.rr[D_X]);
- 	
+
 	if ((sx+res.rr[D_X]>=nodes_x)||(sx+res.rr[D_X]<0))
 		res.rr[ndim]=1;
 	else if ((2*sx/nodes_x)==(2*dx/nodes_x))
@@ -151,7 +149,7 @@ routing_r icube_4mesh_rr (long source, long destination) {
 			if ((p/2)%2)
 				res.rr[D_Y] = (nodes_y-res.rr[D_Y])*(-1);
 		res.size+=abs(res.rr[D_Y]);
-		
+
 		if ((sy+res.rr[D_Y]>=nodes_y)||(sy+res.rr[D_Y]<0))
 			res.rr[ndim]+=2;
 		else if ((2*sy/nodes_y)==(2*dy/nodes_y))
@@ -166,14 +164,13 @@ routing_r icube_4mesh_rr (long source, long destination) {
 * Generates the routing record for an indirect cube using static routing (no Bubble).
 * Deadlock is avoided by considering a collection of isolated meshes and using
 * DOR in each of them. All the  meshes have their origin in node (0,0).
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
 */
 routing_r icube_1mesh_rr (long source, long destination) {
-	long i, j, k, nhops=1;
-	long sx,sy,sz, dx,dy,dz, numhops;
+	long sx,sy=-1,sz=-1, dx,dy=-1,dz=-1;
 	routing_r res;
 
 	res.rr=alloc(ndim+1*sizeof(long)); // the last dimension is the number of parallel mesh to be used.
@@ -213,7 +210,7 @@ routing_r icube_1mesh_rr (long source, long destination) {
 * This function links all the elements within the network.
 */
 void create_icube(){
-	long i, j, nr, np, p, k, n,m, i_np;
+	long i, j, nr, np, p, k, n, i_np;
 
 	for (i=0; i<nprocs; i++){
 		for (j=0; j<ninj; j++)
@@ -252,3 +249,4 @@ void create_icube(){
 		}
 	}
 }
+

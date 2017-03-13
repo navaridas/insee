@@ -145,6 +145,10 @@ void init_functions (void) {
 			if (nways != 1) calc_rr = torus_rr;
 			else calc_rr = torus_rr_unidir;
 			break;
+        case SPINNAKER:
+			neighbor = spinnaker_neighbor;
+			calc_rr = spinnaker_rr;
+			break;
 		case TWISTED:
 			neighbor = dtt_neighbor;
 			if (nways != 1) calc_rr = dtt_rr;
@@ -305,7 +309,7 @@ void init_functions (void) {
 		data_movement = data_movement_direct;
 		arbitrate = arbitrate_direct;
 	}
-	else 
+	else
 	{
 		data_movement = data_movement_indirect;
 		if (topo==ICUBE)
@@ -314,3 +318,4 @@ void init_functions (void) {
 		    arbitrate = arbitrate_trees;
 	}
 }
+

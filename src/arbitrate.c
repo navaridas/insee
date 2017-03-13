@@ -4,7 +4,7 @@
 *
 * FSIN Functional Simulator of Interconnection Networks
 * Copyright (2003-2011) J. Miguel-Alonso, A. Gonzalez, J. Navaridas
-* 
+*
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
 * as published by the Free Software Foundation; either version 2
@@ -64,7 +64,6 @@ void arbitrate_init(void) {
 * @param s_p The source port which is reserving.
 */
 void reserve(long i, port_type d_p, port_type s_p) {
-	port_type p;
 	network[i].p[s_p].aop = d_p;				// Annotation at input port
 	network[i].p[s_p].bet = B_TRIAL_0;		// Success reserving!! Reset my next bet
 	network[i].p[d_p].sip = s_p;				// Annotation of source input port
@@ -90,13 +89,13 @@ void arbitrate_cons_single(long i) {
 */
 void arbitrate_cons_multiple(long i) {
 	port_type s_p;
-	
+
 	for (s_p=0; s_p<last_port_arb_con; s_p++) {
 		if (network[i].p[p_con].req[s_p]) {
 			// Has input port "s_p" requested consumption port?
 			if (!queue_len(&network[i].p[s_p].q))
 			{
-				printf("node %d, p_con %d, s_p %d\n",i,p_con,s_p);
+				printf("node %ld, p_con %ld, s_p %ld\n",i,p_con,s_p);
 				panic("Trying to assign consumption port to empty input queue - multiple");
 			}
 			network[i].p[s_p].aop = p_con;
@@ -133,7 +132,7 @@ void arbitrate_direct(long i, port_type d_p) {
 
 	if (network[i].p[d_p].sip != P_NULL)
 		return;  // Cannot arbitrate twice
-		
+
 	firstlimit = 0;
 
 	if (ipr_l[network[i].congested] && (rand() <= ipr_l[network[i].congested]))
@@ -278,7 +277,7 @@ void arbitrate_trees (long i, port_type d_p) {
 * @see arbitrate_select
 */
 port_type arbitrate_select_fifo(long i, port_type d_p, port_type first, port_type last) {
-	port_type s_p, selected_port;
+	port_type s_p, selected_port=NULL_PORT;
 	CLOCK_TYPE time_of_selected, min;
 
 	time_of_selected = CLOCK_MAX;
@@ -292,10 +291,10 @@ port_type arbitrate_select_fifo(long i, port_type d_p, port_type first, port_typ
 			}
 		}
 	}
-	
-	if (time_of_selected != CLOCK_MAX) 
+
+	if (time_of_selected != CLOCK_MAX)
 		return (selected_port);
-	else 
+	else
 		return (NULL_PORT);
 }
 
@@ -304,8 +303,8 @@ port_type arbitrate_select_fifo(long i, port_type d_p, port_type first, port_typ
 *
 * Given a range of input-injection ports, select the one whose queue occupation is longer.
 * We take a look to the queues in a round-robin fashion, starting with the last lucky
-* input port (network[i].p[d_p].ri), if several ports have the same occupation, the first 
-* visited will be the selected one. 
+* input port (network[i].p[d_p].ri), if several ports have the same occupation, the first
+* visited will be the selected one.
 *
 * @param i The node in which the arbitration is performed.
 * @param d_p The destination port for wich the arbitration is performed.
@@ -317,7 +316,7 @@ port_type arbitrate_select_fifo(long i, port_type d_p, port_type first, port_typ
 * @see arbitrate_select
 */
 port_type arbitrate_select_longest(long i, port_type d_p, port_type first, port_type last) {
-	port_type s_p, selected_port, visited;
+	port_type s_p, selected_port=NULL_PORT, visited;
 	long len_of_selected, pl;
 	long dif=last-first;
 
@@ -373,7 +372,7 @@ port_type arbitrate_select_round_robin(long i, port_type d_p, port_type first, p
 * Random selection of a port.
 *
 * Given a range of input-injection ports, select one of them randomly.
-* 
+*
 * @param i The node in which the arbitration is performed.
 * @param d_p The destination port for wich the arbitration is performed.
 * @param first The first port for looking to.
@@ -389,9 +388,9 @@ port_type arbitrate_select_random(long i, port_type d_p, port_type first, port_t
 	ncand = 0;
 	for(s_p=first; s_p<last; s_p++) {
 		if (!network[i].p[d_p].req[s_p])
-			candidates[s_p] = FALSE; // s_p is not requesting
+			candidates[s_p] = B_FALSE; // s_p is not requesting
 		else {
-			candidates[s_p] = TRUE;
+			candidates[s_p] = B_TRUE;
 			ncand++;
 		}
 	}
@@ -410,7 +409,7 @@ port_type arbitrate_select_random(long i, port_type d_p, port_type first, port_t
 *
 * Given a range of input-injection ports, select the one with the oldest packet,
 * measured since it was injected.
-* 
+*
 * @param i The node in which the arbitration is performed.
 * @param d_p The destination port for wich the arbitration is performed.
 * @param first The first port for looking to.
@@ -435,8 +434,8 @@ port_type arbitrate_select_age(long i, port_type d_p, port_type first, port_type
 			selected_port = s_p;
 		}
 	}
-	if (time_of_selected != CLOCK_MAX) 
+	if (time_of_selected != CLOCK_MAX)
 		return (selected_port);
-	else 
+	else
 		return (NULL_PORT);
 }

@@ -1,6 +1,6 @@
-/** 
+/**
 * @file
-* @brief	Definition of event, event queue & event list, for trace driven simulation. 
+* @brief	Definition of event, event queue & event list, for trace driven simulation.
 
 FSIN Functional Simulator of Interconnection Networks
 Copyright (2003-2011) J. Miguel-Alonso, J. Navaridas
@@ -23,9 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #if (TRACE_SUPPORT != 0)
 
-/** 
+/**
 * Types of event.
-* 
+*
 * It should be 'r' for a reception, 's' for a sent or 'c' for a computation event.
 */
 typedef enum event_t {
@@ -45,10 +45,10 @@ typedef struct event {
 	event_t type;	///< Type of the event (Reception / Sent / Computation).
 	long pid;		///< The other node (processor id).
 	long task;		///< An id for distinguish messages.
-	long length;	///< Length of the message in packets. Number of cycles in computation.
-	long count;		///< The number of packets sent/arrived. Number of elapsed cycles when running.
+	CLOCK_TYPE length;	///< Length of the message in packets. Number of cycles in computation.
+	CLOCK_TYPE count;		///< The number of packets sent/arrived. Number of elapsed cycles when running.
 } event;
-   
+
 /**
 * Structure that defines a node for event queue & lists.
 * @see event_q
@@ -76,4 +76,5 @@ typedef struct event_l {
 
 #endif /* TRACE_SUPPORT */
 #endif /* _event */
+
 

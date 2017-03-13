@@ -1,4 +1,4 @@
-/** 
+/**
 * @file
 * @brief	Execution driven simulation & Interface with Simics tools and functions.
 */
@@ -48,7 +48,7 @@ source,dest,len,check,action
 /**
  * Packet dispatcher function.
  *
- * This function takes the traffic received from the SIMICS networtk interfaces & 
+ * This function takes the traffic received from the SIMICS networtk interfaces &
  * Esta funcion manda los paquetes recibidos y que han sido guardados en la lista de paquetes
  * por su correspondiente socket de destino, o sea, que despacha los paquetes recibidos a su destino.
  * @param list_sockets a list containing the connected sockets from SIMICS.
@@ -65,19 +65,19 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 	struct in_addr targ_in_addr;
 	u_char targ_hw_addr[ETH_ALEN];
 	char clear_stats = CLEAR_STATS, get_stats = GET_STATS;
-		
+
 	get_hw_addr(targ_hw_addr,TARG_HW_ADDR);
 	get_ip_addr(&targ_in_addr,TARG_IP_ADDR);
-		
+
     veces_que_entra_FSIN ++;
     while (TRUE){
 	pack = (struct packet *) StartLoop(list_packets);
 	//if(pack == NULL) printf ("no hay paquetes en la lista de paquetes\n");
-    	
+
 	for (; pack; pack = (struct packet *) GetNext(list_packets)){
 		// Ver si la trama ethernet ha sido tratada anteriormente
 		// para no volver a tratarla
-		//printf("Dispatcher: trama %d, encoladas: %d\n", pack->id_ethernet_frame, ElementsInList(list_packets));
+		//printf("Dispatcher: trama %ld, encoladas: %ld\n", pack->id_ethernet_frame, ElementsInList(list_packets));
 		//if (pack->num_FSIN_packets != 0) continue;
 		buf = pack->buffer;
 		count = pack->length;
@@ -90,17 +90,17 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 			// como antes en la version standalone de SIMICS-TrGen
 			aux = (struct arp_record *) StartLoop(list_sockets);
 			for (; aux; aux = (struct arp_record *) GetNext(list_sockets)){
-				//printf("Sockets en lista: %d\n", ElementsInList(list_sockets));
+				//printf("Sockets en lista: %ld\n", ElementsInList(list_sockets));
 				if (aux->socket != sock && aux->socket != escritor){
 					write(aux->socket, buf, count + sizeof(when) + sizeof(count));
-					if (DEBUG >=5) printf("escribe un ARP broadcast en socket:%d, paquete:%d\n", aux->socket, ++aux->paquetes);
+					if (DEBUG >=5) printf("escribe un ARP broadcast en socket:%ld, paquete:%ld\n", aux->socket, ++aux->paquetes);
 				}
 			}
 			// Destruir la trama ethernet
 			RemoveFromList(list_packets, pack);
 			free(pack->buffer);
 			free(pack);
-			
+
 		} else if(!memcmp(buf + sizeof(when) + sizeof(count), targ_hw_addr, ETH_ALEN) &&
 				!memcmp(buf + sizeof(when) + sizeof(count) + ETH_ALEN*2 + 18, &targ_in_addr, IP_ADDR_LEN) &&
 				!memcmp(buf + sizeof(when) + sizeof(count) + ETH_ALEN*2 + 30, &clear_stats, sizeof(char))){
@@ -111,66 +111,66 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 			for (; aux; aux = (struct arp_record *) GetNext(list_sockets)){
 				if(!memcmp(aux->StationAddress, buf + sizeof(when) + sizeof(count) + ETH_ALEN, ETH_ALEN)){
 				/* Encontrado el socket destino del mensaje */
-					/* Ahora hay que reformatear el mensaje para que le llegue al destino */	
+					/* Ahora hay que reformatear el mensaje para que le llegue al destino */
 					/* Primero intercambiar las MAC origen y destino */
 					SwapBytes(buf + sizeof(when) + sizeof(count), buf + sizeof(when) + sizeof(count) + ETH_ALEN, ETH_ALEN);
 					/* Luego intercambiar las IP origen y destino */
-					SwapBytes(buf + sizeof(when) + sizeof(count) + 26, 
+					SwapBytes(buf + sizeof(when) + sizeof(count) + 26,
 						buf + sizeof(when) + sizeof(count) + 26 +IP_ADDR_LEN, IP_ADDR_LEN);
 					/* Intercambiar los puertos origen y destino aunque sean el mismo en nuestro caso */
-					SwapBytes(buf + sizeof(when) + sizeof(count) + 34, 
+					SwapBytes(buf + sizeof(when) + sizeof(count) + 34,
 						buf + sizeof(when) + sizeof(count) + 36, 2);
 					/* Calcular checksum de la cabecera udp y el payload */
 					memcpy(&aux_len, buf + sizeof(when) + sizeof(count) + 38, 2);
 					*(unsigned short *)(buf + sizeof(when) + sizeof(count) + 40) = htons(
 						csum ((unsigned short *) (buf + sizeof(when) + sizeof(count) + 34), ntohs(aux_len) >> 1));
-					/* calcular el checksum de la cabecera ip y de todo el contenido del paquete ip 
+					/* calcular el checksum de la cabecera ip y de todo el contenido del paquete ip
 					o sea la cabecera udp y el payload */
 					memcpy(&aux_len, buf + sizeof(when) + sizeof(count) + 16, 2);
 					*(unsigned short *)(buf + sizeof(when) + sizeof(count) + 24) = htons(
 						csum ((unsigned short *) buf + sizeof(when) + sizeof(count) + 14, ntohs(aux_len) >> 1));
 					write(aux->socket, buf, count + sizeof(when) + sizeof(count));
-					if (DEBUG >=5) printf("escribe respuesta a CLEAR_STATS en socket:%d\n", aux->socket);
+					if (DEBUG >=5) printf("escribe respuesta a CLEAR_STATS en socket:%ld\n", aux->socket);
 					break;
 				}
 			}
 			/* Inicializar las estadisticas */
 			clear_simics_fsin_stats();
-			
+
 			// Destruir la trama ethernet
 			RemoveFromList(list_packets, pack);
 			free(pack->buffer);
 			free(pack);
-		
+
 		} else if(!memcmp(buf + sizeof(when) + sizeof(count), targ_hw_addr, ETH_ALEN) &&
 				!memcmp(buf + sizeof(when) + sizeof(count) + ETH_ALEN*2 + 18, &targ_in_addr, IP_ADDR_LEN) &&
-				!memcmp(buf + sizeof(when) + sizeof(count) + ETH_ALEN*2 + 30, &get_stats, sizeof(char))){ 
+				!memcmp(buf + sizeof(when) + sizeof(count) + ETH_ALEN*2 + 30, &get_stats, sizeof(char))){
 			/* It is a special packet for us to print FSIN statistics (get_fsin_stats)*/
 			/* Devolver el mensaje que ha llegado al proceso que lo ha mandado ya que lo esta esperando */
 			aux = (struct arp_record *) StartLoop(list_sockets);
 			for (; aux; aux = (struct arp_record *) GetNext(list_sockets)){
 				if(!memcmp(aux->StationAddress, buf + sizeof(when) + sizeof(count) + ETH_ALEN, ETH_ALEN)){
 				/* Encontrado el socket origen del mensaje */
-					/* Ahora hay que reformatear el mensaje para que le llegue de vuelta al origen */	
+					/* Ahora hay que reformatear el mensaje para que le llegue de vuelta al origen */
 					/* Primero intercambiar las MAC origen y destino */
 					SwapBytes(buf + sizeof(when) + sizeof(count), buf + sizeof(when) + sizeof(count) + ETH_ALEN, ETH_ALEN);
 					/* Luego intercambiar las IP origen y destino */
-					SwapBytes(buf + sizeof(when) + sizeof(count) + 26, 
+					SwapBytes(buf + sizeof(when) + sizeof(count) + 26,
 						buf + sizeof(when) + sizeof(count) + 26 +IP_ADDR_LEN, IP_ADDR_LEN);
 					/* Intercambiar los puertos origen y destino aunque sean el mismo en nuestro caso */
-					SwapBytes(buf + sizeof(when) + sizeof(count) + 34, 
+					SwapBytes(buf + sizeof(when) + sizeof(count) + 34,
 						buf + sizeof(when) + sizeof(count) + 36, 2);
 					/* Calcular checksum de la cabecera udp y el payload */
 					memcpy(&aux_len, buf + sizeof(when) + sizeof(count) + 38, 2);
 					*(unsigned short *)(buf + sizeof(when) + sizeof(count) + 40) = htons(
 						csum ((unsigned short *) buf + sizeof(when) + sizeof(count) + 34, ntohs(aux_len) >> 1));
-					/* calcular el checksum de la cabecera ip y de todo el contenido del paquete ip 
+					/* calcular el checksum de la cabecera ip y de todo el contenido del paquete ip
 					o sea la cabecera udp y el payload */
 					memcpy(&aux_len, buf + sizeof(when) + sizeof(count) + 16, 2);
 					*(unsigned short *)(buf + sizeof(when) + sizeof(count) + 24) = htons(
 						csum ((unsigned short *) buf + sizeof(when) + sizeof(count) + 14, ntohs(aux_len) >> 1));
 					write(aux->socket, buf, count + sizeof(when) + sizeof(count));
-					if (DEBUG >=5) printf("escribe respuesta a GET_STATS en socket:%d\n", aux->socket);
+					if (DEBUG >=5) printf("escribe respuesta a GET_STATS en socket:%ld\n", aux->socket);
 					break;
 				}
 			}
@@ -181,7 +181,7 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 			RemoveFromList(list_packets, pack);
 			free(pack->buffer);
 			free(pack);
-		
+
 		} else if (!run_FSIN){
 			/* No se ha recibido el mensaje de CLEAR_STATS aun*/
 			/* Hay que enviar el mensaje directamente al destino */
@@ -190,7 +190,7 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 				if(!memcmp(aux->StationAddress, buf + sizeof(when) + sizeof(count), ETH_ALEN)){
 				/* Encontrado el socket destino del mensaje */
 					write(aux->socket, buf, count + sizeof(when) + sizeof(count));
-					if (DEBUG >=5) printf("escribe mensaje en el destino directamente en socket:%d\n", aux->socket);
+					if (DEBUG >=5) printf("escribe mensaje en el destino directamente en socket:%ld\n", aux->socket);
 					break;
 				}
 			}
@@ -200,7 +200,7 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 			free(pack->buffer);
 			free(pack);
 
-		} else{ /* el mensaje no es un broadcast ni un mensaje de peticion de estadisticas, 
+		} else{ /* el mensaje no es un broadcast ni un mensaje de peticion de estadisticas,
 			se ha recibido el mensaje de CLEAR_STATS, hay que inyectarlo en FSIN */
 			aux = (struct arp_record *) StartLoop(list_sockets);
 			for (; aux; aux = (struct arp_record *) GetNext(list_sockets)){
@@ -229,10 +229,10 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
 		}
 		else {
 			for (i=0; i < fsin_cycle_run; i++) {
-			
+
 				// inyectar los phits en las colas de inyeccion
 				for (j=0; j < nprocs; j++) data_injection(j);
-		
+
 				data_movement(FALSE);
 				sim_clock++;
 				if (sim_clock%pinterval == 0) results_partial();
@@ -250,7 +250,7 @@ void packet_dispatcher(list * list_sockets, list * list_packets){
  * This function prints the execution driven simulation stats from FSIN, & returns to direct dispatching mode.
  */
 void get_simics_fsin_stats(){
-    
+
     time(&end_time);
 	save_batch_results();
 	print_results(start_time, end_time);
@@ -287,7 +287,7 @@ void clear_simics_fsin_stats(){
  * de inyeccion de los routers
  * This function divides ethernet data frames into FSIN packets & inject them into the simulated network.
  * @param pack A list with all the data frames within FSIN.
- * @param FSIN_destination Node 
+ * @param FSIN_destination Node
  */
 void frame_packetizer(struct packet * pack, unsigned long FSIN_destination){
 
@@ -305,21 +305,21 @@ void frame_packetizer(struct packet * pack, unsigned long FSIN_destination){
 				id_trama = (pack->id_ethernet_frame << num_bits_packet_sequence) | i;
 				iport = generate_FSIN_packet(pack->FSIN_node_source, pack->FSIN_node_destination, id_trama);
 				if (iport != NULL_PORT) {
-					if (DEBUG >=5) printf("frame_packetizer paquete %i de %d de la trama %d regenerado\n", i, pack->num_FSIN_packets, pack->id_ethernet_frame);
+					if (DEBUG >=5) printf("frame_packetizer paquete %i de %ld de la trama %ld regenerado\n", i, pack->num_FSIN_packets, pack->id_ethernet_frame);
 					pack->FSIN_packets[i].packet_generated = 1;
 				}
 				else{
 					// El paquete no cabia en el buffer de inyeccion y hay que deshacer la creacion de paquetes
 					// y dejar que se inyecte mas tarde cuando haya sitio
 					continue;
-				}				
+				}
 			}
 		}
 		return;
 	}
-		
+
 	// completar la inicializacion de la trama previa a la paquetizacion de la misma
-	//printf("PACKET_SIZE_IN_BYTES %d\n", PACKET_SIZE_IN_BYTES);
+	//printf("PACKET_SIZE_IN_BYTES %ld\n", PACKET_SIZE_IN_BYTES);
 	pack->num_FSIN_packets = (unsigned short)ceil((double)pack->length / PACKET_SIZE_IN_BYTES);
 	if (pack->num_FSIN_packets == 0) pack->num_FSIN_packets = 1;
 	//printf("pack->num_FSIN_packets %u \n",pack->num_FSIN_packets);
@@ -356,9 +356,9 @@ void frame_packetizer(struct packet * pack, unsigned long FSIN_destination){
 }
 
 /**
- * funcion generate_FSIN_packet 
- * Esta funcin rellena la estructura que contiene un paquete de FSIN 
- * Es analoga a generate_pkt de FSIN, pero no tiene que usar ningun tipo de 
+ * funcion generate_FSIN_packet
+ * Esta funcin rellena la estructura que contiene un paquete de FSIN
+ * Es analoga a generate_pkt de FSIN, pero no tiene que usar ningun tipo de
  * distribucion para calcular el destino del paquete, porque ya viene dado por
  * la trama ethernet. El paquete no se genera sinteticamente
  */
@@ -378,7 +378,7 @@ port_type generate_FSIN_packet(unsigned long src, unsigned long dst, long id_eth
 	packet.inj_time = sim_clock;  // Some additional info
 	packet.n_hops = 0;
 	packet.id_trama = id_ethernet_frame;
-	
+
 	iport = select_input_port(packet.from, packet.to);
 	qi = &(network[packet.from].qi[iport]);
 	if (inj_queue_space(qi) < packet.size) {
@@ -416,7 +416,7 @@ void SIMICS_phit_away(long i, phit ph){
 	packet_t * FSIN_pkt;
 	int j=0;
 	percent=0.0f;
-	
+
 	FSIN_pkt = &pkt_space[ph.packet];
 	pack = (struct packet *) StartLoop(list_packets);
 	for (; pack; pack = (struct packet *) GetNext(list_packets)){
@@ -438,7 +438,7 @@ void SIMICS_phit_away(long i, phit ph){
 					}
 				}
 				if (aux == NULL) {
-					printf("Error grave en SIMICS_phit_away: no se encuentra el nodo SIMICS a partir del nodo FSIN %d\n", i);
+					printf("Error grave en SIMICS_phit_away: no se encuentra el nodo SIMICS a partir del nodo FSIN %ld\n", i);
 					closing();
 					exit(-1);
 				}
@@ -446,13 +446,13 @@ void SIMICS_phit_away(long i, phit ph){
 				buf = pack->buffer;
 				count = pack->length;
 				aux->paquetes ++;
-				if (DEBUG >=5) printf("escribe en socket:%d paquete:%d\n", aux->socket, aux->paquetes);
-				// Se calcula si el mensaje que acaba de llegar  hay que retrasarlo 
+				if (DEBUG >=5) printf("escribe en socket:%ld paquete:%ld\n", aux->socket, aux->paquetes);
+				// Se calcula si el mensaje que acaba de llegar  hay que retrasarlo
 				// num_periodos_espera en ciclos Simics
 				if (num_periodos_espera != 0){
 					percent = ((double)rand()) / RAND_MAX;
 					if (percent <= WAIT_PERCENT){
-						if (DEBUG >=2) printf("toca esperar:%d num_periodos_espera\n", num_periodos_espera);
+						if (DEBUG >=2) printf("toca esperar:%ld num_periodos_espera\n", num_periodos_espera);
 						memcpy(buf, (void *)&when, sizeof(when));
 					}
 					else {
@@ -470,10 +470,10 @@ void SIMICS_phit_away(long i, phit ph){
 				// Borrar la trama ethernet de la lista de tramas pendientes de entrega
 				// Destruir la trama ethernet
 				RemoveFromList(list_packets, pack);
-				if (DEBUG >=5) printf("SIMICS_phit_away: Quita %d, quedan: %d\n", pack->id_ethernet_frame, ElementsInList(list_packets));
+				if (DEBUG >=5) printf("SIMICS_phit_away: Quita %ld, quedan: %ld\n", pack->id_ethernet_frame, ElementsInList(list_packets));
 				free(pack->buffer);
 				free(pack);
-				
+
 				break;
 			}
 		}
@@ -495,7 +495,7 @@ void closing(){
 	aux_recorrido = (struct arp_record *) StartLoop(lista);
 	for (; aux_recorrido; aux_recorrido = (struct arp_record *) GetNext(lista)){
 		close(aux_recorrido->socket);
-		printf("se ha quitado de la lista un socket abierto:%d\n", aux_recorrido->socket);
+		printf("se ha quitado de la lista un socket abierto:%ld\n", aux_recorrido->socket);
 		RemoveFromList(lista, (void *) aux_recorrido);
 		free(aux_recorrido);
 	}
@@ -513,7 +513,7 @@ void closing(){
 
 /**
  * Signal handler.
- * 
+ *
  * @param sig The SIGNAL id.
  */
 void thread_signal_handler (int sig){
@@ -554,7 +554,7 @@ int close_input_reading_thread(pthread_t * idHilo){
 }
 
 /**
- * funcion input_reading_thread 
+ * funcion input_reading_thread
  * esta funcion lee continuamente el parametro retardo de interconexion
  * de la entrada estandar
  * Orden Parametros:  ninguno
@@ -566,7 +566,7 @@ void * input_reading_thread(void *arg) {
 	struct	sigaction	siginfo;
 	char * name;
 	char * value;
-		
+
 	//configuramos las seales a recibir
 	sigemptyset(&(siginfo.sa_mask));
 	sigaddset(&(siginfo.sa_mask),SIGUSR1);
@@ -590,23 +590,23 @@ void * input_reading_thread(void *arg) {
 				value = (char *)strtok(NULL, "=");
 				if (value == NULL) {
 					printf("formato incorrecto: pinterval=number, ahora pinterval=%lu\n", pinterval);
-					for(i=0; i < 50; i++) buf[i]='\0';	
+					for(i=0; i < 50; i++) buf[i]='\0';
 					continue;
 				}
 				pinterval = atol(value);
 				printf("pinterval=%"PRINT_CLOCK"\n", pinterval);
-				for(i=0; i < 50; i++) buf[i]='\0';			
+				for(i=0; i < 50; i++) buf[i]='\0';
 			}
 			else if (!strncmp("plevel", name, strlen(name))){
 				value = (char *)strtok(NULL, "=");
 				if (value == NULL) {
 					printf("formato incorrecto: plevel=number, ahora plevel=%lu\n", plevel);
-					for(i=0; i < 50; i++) buf[i]='\0';	
+					for(i=0; i < 50; i++) buf[i]='\0';
 					continue;
 				}
 				plevel = atol(value);
 				printf("plevel=%lu\n", plevel);
-				for(i=0; i < 50; i++) buf[i]='\0';			
+				for(i=0; i < 50; i++) buf[i]='\0';
 			}
 			else if (!strncmp("exit", name, strlen(name))){
 				received_terminate_signal = 1;
@@ -619,7 +619,7 @@ void * input_reading_thread(void *arg) {
 				value = (char *)strtok(NULL, "=");
 				if (value == NULL) {
 					printf("formato incorrecto: num_periodos_espera=number, ahora num_periodos_espera=%lu\n", num_periodos_espera);
-					for(i=0; i < 50; i++) buf[i]='\0';	
+					for(i=0; i < 50; i++) buf[i]='\0';
 					continue;
 				}
 				num_periodos_espera = atol(value);
@@ -636,9 +636,9 @@ void * input_reading_thread(void *arg) {
 			else if (!strncmp("fsin_cycle_relation", name, strlen(name))){
 				value = (char *)strtok(NULL, "=");
 				if (value == NULL) {
-					printf("formato incorrecto: fsin_cycle_relation=number, ahora fsin_cycle_relation=%lu\n", 
+					printf("formato incorrecto: fsin_cycle_relation=number, ahora fsin_cycle_relation=%lu\n",
                                               fsin_cycle_relation);
- 					for(i=0; i < 50; i++) buf[i]='\0';	
+ 					for(i=0; i < 50; i++) buf[i]='\0';
 					continue;
 				}
 				fsin_cycle_relation = atol(value);
@@ -687,8 +687,8 @@ void signal_handler (int sig){
  * long simics_cycle_relation: relacion de ciclos entre Simics y FSIN, los ciclos que correra Simics, por defecto es 1000
  * long packet_size_in_phits: tamao en phits del paquete, un phit son 4 bytes (configurable), por defecto es 32, es pkt_len
  * long serv_addr: puerto de escucha de nuevas conexiones de SIMICS hosts, por defecto es 8082
- * long num_periodos_espera: retardo de interconexion que se introducira en el hosts destino. 
- *							Medido en ciclos SIMICS, por defecto es 0 
+ * long num_periodos_espera: retardo de interconexion que se introducira en el hosts destino.
+ *							Medido en ciclos SIMICS, por defecto es 0
  */
 void init_exd(long fsin_cycles, long simics_cycles, long packet_size,
 			  long simics_hosts_port, long periodos){
@@ -753,11 +753,11 @@ void init_exd(long fsin_cycles, long simics_cycles, long packet_size,
 		}
 		else {
 			num_periodos_espera = periodos;
-			printf("periodos %d\n", num_periodos_espera);
+			printf("periodos %ld\n", num_periodos_espera);
 		}
 	}
 	when = num_periodos_espera;
-	num_bits_packet_sequence = ceil(log((double)1500/(packet_size_in_phits*phit_size))/log (2));
+	num_bits_packet_sequence = ceil(log((double)1500/(packet_size_in_phits*phit_len))/log (2));
 	mask_eth_id_packet_sequence = 0;
 	for (i=0; i<num_bits_packet_sequence; i++){
 		mask_eth_id_packet_sequence = (mask_eth_id_packet_sequence << 1) | 1;
@@ -765,7 +765,7 @@ void init_exd(long fsin_cycles, long simics_cycles, long packet_size,
     max_id_ethernet_frame = pow (2, sizeof(unsigned long) * 8 - num_bits_packet_sequence) -1;
 	mask_eth_id_ethernet_frame = ~0 & ~mask_eth_id_packet_sequence;
 	if(DEBUG>=5){
-        	printf("num_bits_packet_sequence %d\n", num_bits_packet_sequence);
+        	printf("num_bits_packet_sequence %ld\n", num_bits_packet_sequence);
         	printf ("mask_eth_id_packet_sequence: %08x\n", mask_eth_id_packet_sequence);
 		printf("max_id_ethernet_frame %08x\n", max_id_ethernet_frame);
         	//if (max_id_ethernet_frame == 268435455) printf("true\n");
@@ -838,7 +838,7 @@ void init_exd(long fsin_cycles, long simics_cycles, long packet_size,
         syn_addr_r.sin_family=AF_INET;
         syn_addr_r.sin_addr.s_addr=htonl(INADDR_ANY); /* differs from sender */
         syn_addr_r.sin_port=htons(FSIN_PORT);
-	
+
 	/* allow multiple sockets to use the same PORT number */
     	if (setsockopt(syn_sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
        	  perror("Reusing ADDR failed in syn_sock");
@@ -920,7 +920,7 @@ void run_network_exd(void) {
     	dispuestos = select(FD_SETSIZE, &lb, (fd_set *)NULL, (fd_set *) NULL, &tv);
 		if (dispuestos < 0) {
 			perror("select ha fallado");
-			continue;	
+			continue;
 		}
 		if (dispuestos == 0){
 			//Puede que se haya perdido un CONTINUE lo remandamos con un timestamp antiguo
@@ -978,11 +978,11 @@ void run_network_exd(void) {
 						aux->FSIN_node_number = aux_recorrido->FSIN_node_number;
 						/*FSIN_next_node_number --;
 						if (FSIN_next_node_number < 0){
-							printf("FSIN_next_node_number < 0, es %d\n", FSIN_next_node_number);
+							printf("FSIN_next_node_number < 0, es %ld\n", FSIN_next_node_number);
 							FSIN_next_node_number = 0;
 						}*/
 						close(aux_recorrido->socket);
-						printf("se ha quitado de la lista un socket abierto:%d\n", aux_recorrido->socket);
+						printf("se ha quitado de la lista un socket abierto:%ld\n", aux_recorrido->socket);
 						RemoveFromList(lista, (void *) aux_recorrido);
 						free(aux_recorrido);
 					}
@@ -991,28 +991,28 @@ void run_network_exd(void) {
 			AddLast(lista, (void *) aux);
 			FD_SET(nuevo_usuario, &lista_sockets);
 			write(nuevo_usuario, "OK", sizeof("OK"));
-			printf("se ha conectado en socket %d: ", nuevo_usuario);
+			printf("se ha conectado en socket %ld: ", nuevo_usuario);
 			for (i=0; i<6; i++){
 				printf("%02x ", aux->StationAddress[i]&0xff);
 			}
-			printf(", nodo FSIN: %d\n", aux->FSIN_node_number);
+			printf(", nodo FSIN: %ld\n", aux->FSIN_node_number);
 		}
 		else if (FD_ISSET(syn_sock, &lb)) {
 			//nueva conexion Simics para sincronizacion
 			leidos = 0;
 			memset(msgbuf, 0, sizeof(msgbuf));
-			if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0, 
+			if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0,
 				(struct sockaddr *) &syn_addr_r, &len)) < 0) {
 	  	  		perror("recvfrom syn_sock CONNECT");
 		  		close(syn_sock);
 	  	  		return;
 			}
-			
+
 			if (DEBUG >= 10) printf("%s\n", msgbuf);
-			if (DEBUG >= 10) printf("leidos:%d\n", leidos);
+			if (DEBUG >= 10) printf("leidos:%ld\n", leidos);
 			if(!strncmp(msgbuf, "TS:", strlen("TS:"))){
 				while(leidos < strlen("TS:") + sizeof(StationAddress) + strlen(":")+ sizeof(timestamp)){
-					if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0, 
+					if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0,
 						(struct sockaddr *) &syn_addr_r, &len)) < 0) {
 	  	  				perror("recvfrom syn_sock CONNECT");
 		  				close(syn_sock);
@@ -1021,15 +1021,15 @@ void run_network_exd(void) {
 				}
 				memcpy(StationAddress, msgbuf + strlen("TS:"), sizeof(StationAddress));
 				memcpy(&timestamp, msgbuf + strlen("TS:") + sizeof(StationAddress) + strlen(":"), sizeof(timestamp));
-				
+
 				if (timestamp_old > timestamp) {
 					printf("error recibiendo timestamp: %llu timestamp_old:%llu\n", timestamp, timestamp_old);
 				}
 				if (!timestamp_init) timestamp_init = timestamp;
 				timestamp_end = timestamp;
-				
+
 				if (DEBUG >= 10)
-					printf("timestamp: %llu timestamp_old:%llu num_Simics_hosts %d \n", 
+					printf("timestamp: %llu timestamp_old:%llu num_Simics_hosts %ld \n",
 					timestamp, timestamp_old, num_Simics_hosts);
 				if (AddSync(StationAddress, sizeof(StationAddress), timestamp) && num_Simics_hosts == nprocs){
 				//All Simics hosts are connected and have sent their timestamps
@@ -1040,7 +1040,7 @@ void run_network_exd(void) {
 					strcat(msgbuf, "CONTINUE:");
 					memcpy(msgbuf + strlen("CONTINUE:"), &timestamp, sizeof(timestamp));
 					memcpy(msgbuf + strlen("CONTINUE:") + sizeof(timestamp), &simics_cycle_run, sizeof(simics_cycle_run));
-					if (sendto(syn_sock, &msgbuf, strlen("CONTINUE:") + sizeof(timestamp)+ sizeof(simics_cycle_run), 
+					if (sendto(syn_sock, &msgbuf, strlen("CONTINUE:") + sizeof(timestamp)+ sizeof(simics_cycle_run),
 						0, (struct sockaddr *) &syn_addr_s, sizeof(syn_addr_s)) < 0) {
 	  					perror("sendto syn_sock CONTINUE");
 	  					close(syn_sock);
@@ -1053,33 +1053,33 @@ void run_network_exd(void) {
 				}
 				continue;
 			}
-			else if(!strncmp(msgbuf, "CONNECT:", strlen("CONNECT:"))) {	
+			else if(!strncmp(msgbuf, "CONNECT:", strlen("CONNECT:"))) {
 				while(leidos < strlen("CONNECT:") + sizeof(current_num_hosts_per_Simics) + strlen(":") + sizeof(StationAddress)){
-					if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0, 
+					if ((leidos=recvfrom(syn_sock, msgbuf, sizeof(msgbuf), 0,
 						(struct sockaddr *) &syn_addr_r, &len)) < 0) {
 	  	  				perror("recvfrom syn_sock CONNECT");
 		  				close(syn_sock);
 	  	  				return;
 					}
 				}
-				
+
 				if (strncmp("CONNECT:", msgbuf, strlen("CONNECT:"))) continue;
 
 				memcpy(&current_num_hosts_per_Simics, msgbuf + strlen("CONNECT:"), sizeof(current_num_hosts_per_Simics));
-				memcpy(StationAddress, msgbuf + strlen("CONNECT:") + sizeof(current_num_hosts_per_Simics) + strlen(":"), 
+				memcpy(StationAddress, msgbuf + strlen("CONNECT:") + sizeof(current_num_hosts_per_Simics) + strlen(":"),
 					sizeof(StationAddress));
-				
+
 				CreateSync(&StationAddress, sizeof(StationAddress));
-				
+
 				num_Simics_hosts += current_num_hosts_per_Simics;
 				assert(num_Simics_hosts <= nprocs);
-				
+
 				printf("CONNECT:");
 				for (i=0; i<6; i++){
 					printf("%02x ", StationAddress[i]&0xff);
 				}
 				printf("\n");
-				
+
 				memset(msgbuf, 0, sizeof(msgbuf));
 				memcpy(msgbuf, "OK:", strlen("OK:"));
 				memcpy(msgbuf + strlen("OK:"), StationAddress, sizeof(StationAddress));
@@ -1097,7 +1097,7 @@ void run_network_exd(void) {
 					while (leidos != sizeof(count)){
 						//lee el tamao del buffer
 						acum_or_error = read(escritor, (void *) ((&count) + leidos), sizeof(count) - leidos);
-						//printf ("count:%d\n", count);
+						//printf ("count:%ld\n", count);
 						if (acum_or_error <= 0) {
 							/*
 							aux = (struct arp_record *) StartLoop(lista);
@@ -1110,12 +1110,12 @@ void run_network_exd(void) {
 								}
 							}
 							if (DEBUG >=0)
-								printf("Cerramos el socket al leer el numero de bytes del paquete leidos:%d!=%d\n",
+								printf("Cerramos el socket al leer el numero de bytes del paquete leidos:%ld!=%ld\n",
 												leidos, sizeof(count));
 							close(escritor);
 							FD_CLR(escritor, &lista_sockets);
 							*/
-							
+
 							aux = (struct arp_record *) StartLoop(lista);
 							for (; aux; aux = (struct arp_record *) GetNext(lista)){
 								if( aux->socket == escritor){
@@ -1123,13 +1123,13 @@ void run_network_exd(void) {
 										printf("%02x ", aux->StationAddress[i]&0xff);
 									}
 									printf(":");
-									printf("Error en numero de bytes del mensaje, leidos:%d!=%d\n",
+									printf("Error en numero de bytes del mensaje, leidos:%ld!=%ld\n",
 										leidos, sizeof(count));
 									for (i=0; i<6; i++){
 										printf("%02x ", aux->StationAddress[i]&0xff);
 									}
 									printf(":");
-									printf("resultado del read: acum_or_error=%d\n", acum_or_error);
+									printf("resultado del read: acum_or_error=%ld\n", acum_or_error);
 									break;
 								}
 							}
@@ -1141,11 +1141,11 @@ void run_network_exd(void) {
 					if (leidos == -1) break;
 					if (DEBUG>=5){
 						if (count != 0) {
-							printf ("buffer de longitud: %d\n", count);
+							printf ("buffer de longitud: %ld\n", count);
 						}
 						else {
 							acum ++;
-							if (!(acum = acum % 1000)) printf ("%d", count);
+							if (!(acum = acum % 1000)) printf ("%ld", count);
 							continue;
 						}
 					}
@@ -1180,7 +1180,7 @@ void run_network_exd(void) {
 					}
 					//se ha leido un paquete
 					if (DEBUG >=9) {
-						printf("Ha leido en el paquete: %d bytes del socket:%d\n", leidos, escritor);
+						printf("Ha leido en el paquete: %ld bytes del socket:%ld\n", leidos, escritor);
 						for (i=0; i<16; i++){
 							printf("%02x ", buf[i + sizeof(when) + sizeof(count)]&0xff);
 						}
@@ -1198,7 +1198,7 @@ void run_network_exd(void) {
 					pack->num_FSIN_packets = 0;
 					AddLast(list_packets, (void *) pack);
 					if (!run_FSIN) packet_dispatcher(lista, list_packets);
-					if (DEBUG >=5) printf("run_network_exd: trama %d, encoladas: %d\n", pack->id_ethernet_frame, ElementsInList(list_packets));
+					if (DEBUG >=5) printf("run_network_exd: trama %ld, encoladas: %ld\n", pack->id_ethernet_frame, ElementsInList(list_packets));
 					break;
 				}
 			}
@@ -1298,3 +1298,4 @@ unsigned short csum (unsigned short *buf, int nwords){
 }
 
 #endif
+

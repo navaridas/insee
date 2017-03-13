@@ -80,8 +80,8 @@ void router_init(void) {
 		// Congestion with timeouts.
 		network[i].timeout_counter = (CLOCK_TYPE) 0L;
 		network[i].timeout_packet = NULL_PACKET;
-		network[i].congested = FALSE;
-		
+		network[i].congested = B_FALSE;
+
 		network[i].triggered=0;
 
 #if (TRACE_SUPPORT == 1)
@@ -133,7 +133,7 @@ void router_init(void) {
 	if (shotmode)
 	    for (i=0; i<nprocs; i++)
 	        network[i].source=OTHER_SOURCE; // Bursty Source
-	    
+
 	/* Allocates space for transit queues */
 	for(i = 0; i < NUMNODES; ++i)
 		for(j = 0; j < n_ports+1; ++j)
@@ -145,7 +145,7 @@ void router_init(void) {
  *
  * All port's structures (queues, arbitration, requesting, ...) are prepared for transit and
  * injection ports of the given router.
- * 
+ *
  * @param i The node whose ports must be initilized.
  */
 void init_ports(long i){
@@ -177,7 +177,7 @@ void init_ports(long i){
 * Calculates the coordinates of a node (X, Y, Z)
 *
 * Each node have stored their own coordinates because they are used often.
-* 
+*
 * @param ad Address of the node.
 * @param cx Coordinate X is returned here.
 * @param cy Coordinate Y is returned here.
@@ -196,7 +196,7 @@ void coords (long ad, long *cx, long *cy, long *cz) {
 * Calculates the coordinates of a node (X, Y, Z) in a icube.
 *
 * Each node have stored their own coordinates because they are used often.
-* 
+*
 * @param ad Address of the node.
 * @param cx Coordinate X is returned here.
 * @param cy Coordinate Y is returned here.
@@ -224,7 +224,7 @@ void coords_icube (long ad, long *cx, long *cy, long *cz) {
 *
 * Since port's coordinates are used often, they're stored instead of
 * be calculated each time they are required.
-* 
+*
 * @param e A port number.
 * @param j The dimension of the port are returned here.
 * @param k The direction (way) of the port are returned here.
@@ -288,8 +288,9 @@ void init_network(void) {
 			np=p-1;
 		else
 			np=p+1;
-		printf("breaking link %d.%d->%d.%d\n",n,p,nr,np);
+		printf("breaking link %ld.%ld->%ld.%ld\n",n,p,nr,np);
 		network[n].p[p].faulty=1;
 		//network[nr].p[np].faulty=1; // Broken link means two direction malfunction.
 	}
 }
+

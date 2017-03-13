@@ -52,7 +52,7 @@ static long *count=NULL;
 * Select the shortest injection queue.
 *
 * Selects the port with SHORTEST injection + buffer utilization.
-* 
+*
 * @param i The node in which the injection is performed.
 * @param dest The destination node. Actually not used in this function.
 * @return The port in which inject.
@@ -85,7 +85,7 @@ port_type select_input_port_shortest(long i, long dest) {
 * Select an injection queue using strict DOR prerouting.
 *
 * When using DIMENSION_ORDER_ROUTING most packets are injectec in X+ or X-
-* 
+*
 * @param i The node in which the injection is performed.
 * @param dest The destination node.
 * @return The port in which inject.
@@ -116,8 +116,8 @@ port_type select_input_port_dor_only(long i, long dest) {
 	free(r.rr);
 	if (p==NULL_PORT)
 		panic("Bad pre-routing");
-	else
-		return p;
+
+	return p;
 }
 
 /**
@@ -125,7 +125,7 @@ port_type select_input_port_dor_only(long i, long dest) {
 *
 * Taking into consideration all the possible profitable dim/way options, it injects
 * in that with shortest injection+buffer utilization
-* 
+*
 * @param i The node in which the injection is performed.
 * @param dest The destination node.
 * @return The port in which inject.
@@ -165,10 +165,10 @@ port_type select_input_port_shortest_profitable(long i, long dest) {
 
 /**
 * Select an injection queue using DOR prerouting and if not possible in the shortest port.
-* 
-* It uses select_input_port_dor but, if the corresponding injector is full, it tries to inject 
+*
+* It uses select_input_port_dor but, if the corresponding injector is full, it tries to inject
 * in the port with shortest injection+buffer utilization.
-* 
+*
 * @param i The node in which the injection is performed.
 * @param dest The destination node.
 * @return The port in which inject.
@@ -188,9 +188,9 @@ port_type select_input_port_dor_shortest(long i, long dest) {
 
 /**
 * Select an injection queue using the packet's routing record.
-* 
+*
 * Select the injector for the direction in which the packet has the highest number of hops.
-* 
+*
 * @param i The node in which the injection is performed.
 * @param dest The destination node.
 * @return The port in which inject.
@@ -279,13 +279,13 @@ void generate_phits(unsigned long packet, port_type iport) {
 * If there is no packet saved then generates a packet using the defined pattern.
 * Then try to inject the generated packet & if it cannot be injected and packet
 * dropped is not allowed, save the packet and try to use it later.
-* 
+*
 * @see generate_phits
-* 
+*
 * @param i The node in which the injection is performed.
 */
 void generate_pkt(long i) {
-	long d, n;
+	long d=-1, n;
 	unsigned long pkt;
 	double aux;
 	inj_queue *qi;
@@ -294,7 +294,7 @@ void generate_pkt(long i) {
 
 //	if (network[i].source==NO_SOURCE) // Should not be testing this -- paranoid mode.
 //	{
-//		printf("node %d\n",i);
+//		printf("node %ld\n",i);
 //		panic("Trying to generate a packet in a NO_SOURCE node");
 //	}
 
@@ -321,7 +321,7 @@ void generate_pkt(long i) {
 		}
 		else
 			network[i].triggered--;
-	
+
 		switch (pattern) {
 		// RANDOM DESTINATIONS
 		case HOTREGION:
@@ -357,21 +357,21 @@ void generate_pkt(long i) {
 					if (rnd<0.5)
 					{
 						dst[n]=1-(r%3);	// [-1, 1]
-						//printf("1(%f). %d, ",rnd,dst[n]);
+						//printf("1(%f). %ld, ",rnd,dst[n]);
 					}
 					else if (rnd<0.75)
 					{
 						dst[n]=r%4;		// [-3,-2] U [ 2, 3]
 						if (dst[n]<2)
 							dst[n]-=3;
-						//printf("2(%f). %d, ",rnd,dst[n]);
+						//printf("2(%f). %ld, ",rnd,dst[n]);
 					}
 					else if (rnd<0.875)
 					{
 						dst[n]=r%8;		// [-7,-4] U [ 4, 7]
 						if (dst[n]<4)
 							dst[n]-=7;
-						//printf("3(%f). %d, ",rnd,dst[n]);
+						//printf("3(%f). %ld, ",rnd,dst[n]);
 					}
 					else
 					{
@@ -381,7 +381,7 @@ void generate_pkt(long i) {
 							dst[D_Y]=(r%(nodes_y-15))+8;
 						if (n==D_Z)
 							dst[D_Z]=(r%(nodes_z-15))+8;
-						//printf("4(%f). %d, ",rnd,dst[n]);
+						//printf("4(%f). %ld, ",rnd,dst[n]);
 					}
 				}
 				dst[D_X]=mod(dst[D_X]+network[i].rcoord[D_X],nodes_x);
@@ -482,8 +482,7 @@ void generate_pkt(long i) {
 			} else {
 				if (!event_empty(&network[i].events)){
 					event e;
-					while (!event_empty(&network[i].events) && head_event(&network[i].events).type==RECEPTION){
-						e = head_event(&network[i].events);
+					while (!event_empty(&network[i].events) && (e=head_event(&network[i].events)).type==RECEPTION){
 						if (occurred(&network[i].occurs, e))
 							rem_head_event(&network[i].events);
 						else
@@ -571,7 +570,7 @@ void generate_pkt(long i) {
 *
 * Injection may be stopped by the global congestion control, by the parameter mpackets
 * in fsin.conf, or by the shot mode when a burst is finished.
-* 
+*
 * @param i The node in which the data must be generated.
 */
 void data_generation(long i) {
@@ -582,8 +581,7 @@ void data_generation(long i) {
 #if (TRACE_SUPPORT != 0)
 	{
 		event e;
-		if(!event_empty(&network[i].events) && head_event(&network[i].events).type==COMPUTATION){
-			e = head_event(&network[i].events);
+		if(!event_empty(&network[i].events) && (e=head_event(&network[i].events)).type==COMPUTATION){
 			do_event(&network[i].events, &e);
 		}
 	}
@@ -593,21 +591,21 @@ void data_generation(long i) {
 
 /**
 * Performs the data generation when running in shotmode.
-* 
+*
 * @param reset When TRUE, starts a new shot.
 */
 void datagen_oneshot(bool_t reset) {
 	long i;
 
 	switch (reset) {
-		case TRUE: // new shot.
+		case B_TRUE: // new shot.
 			if (!count)
 				count = alloc(sizeof (long)*nprocs);
 			for (i=0; i<nprocs; i++)
 				count[i] = shotsize;
 				// One cycle is wasted here.
 			return;
-		case FALSE: // inject
+		case B_FALSE: // inject
 			for (i=0; i<nprocs; i++) {
 				if (count[i])
 					data_generation(i);
@@ -624,7 +622,7 @@ void datagen_oneshot(bool_t reset) {
 *
 * Performs data movement from an injection buffer, which is used for data transmision between
 * the router and its node processor(s), to the injection port which takes part in the router logic.
-* 
+*
 * @param i The node in which the injection is performed.
 */
 void data_injection(long i) {
@@ -768,7 +766,7 @@ void init_injection	(void) {
 
 /**
  * Reads the population from a file. EXPERIMENTAL
- * 
+ *
  * A population is a collection of distances at which the injected packets will be sent.
  * Allows feeding the simulation with user-defined distance distributions.
  */
@@ -783,8 +781,10 @@ void read_population(){
 	}
 
 	for (i=0; i<POP_SIZE; i++){
-		fgets(buffer,64,fpop);
-		pop[i]=atol(buffer);
+		if(fgets(buffer,64,fpop) != NULL)
+			pop[i]=atol(buffer);
+		else
+			panic("Error reading population file.");
 	}
 
 	fclose(fpop);
@@ -792,9 +792,11 @@ void read_population(){
 
 /**
  * Reads the histogram from a file. EXPERIMENTAL
- * 
- * An histogram with the distance distribution that the simulation should follow. 
+ *
+ * An histogram with the distance distribution that the simulation should follow.
  * Allows feeding the simulation with user-defined distance distributions.
  */
 void read_histogram(){
 }
+
+#

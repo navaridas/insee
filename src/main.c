@@ -34,6 +34,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef _main
 #define _main
 
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -68,7 +69,7 @@ long nchan;			///< Number of Virtual Channels.
 long nways;			///< Number of ways. (unidir. / bidir.)
 long ninj;			///< Number of injectors in each router.
 long pkt_len;		///< Length of FSIN packets in phits.
-long phit_size;		///< Size, in bytes, of a phit. Used in application-driven simulation for splitting mpi messages into packets.
+long phit_len;		///< Size, in bytes, of a phit. Used in application-driven simulation for splitting mpi messages into packets.
 long buffer_cap;	///< Transit buffer capacity (in packets).
 long binj_cap;		///< Injection buffer capacity (in packets).
 
@@ -82,7 +83,7 @@ long faults;		///< Number of broken links.
 * Transit queue length (in phits).
 *
 * Equal to #buffer_cap multiplied by #pkt_len.
-* 
+*
 * @see buffer_cap.
 * @see pkt_len.
 */
@@ -92,7 +93,7 @@ long tr_ql;
 * Injection queue length (in phits).
 *
 * Equel to #binj_cap multiplied by #pkt_len.
-* 
+*
 * @see binj_cap.
 * @see pkt_len.
 */
@@ -100,7 +101,7 @@ long inj_ql;
 
 /**
 * The traffic pattern Id.
-* 
+*
 * @see traffic_pattern_t.
 * @see pattern_l.
 */
@@ -108,7 +109,7 @@ traffic_pattern_t pattern;
 
 /**
 * The topology Id.
-* 
+*
 * @see topo_t.
 * @see topology_l.
 */
@@ -116,7 +117,7 @@ topo_t topo;
 
 /**
 * Id of the Virtual Channel management mechanism.
-* 
+*
 * @see vc_management_t
 * @see vc_l
 */
@@ -124,15 +125,28 @@ vc_management_t vc_management;
 
 /**
 * Id of the routing used in DOR (Dimension or Direction) and in Multistage networks.
-* 
+*
 * @see routing_t
 * @see routing_l
 */
 routing_t routing;
 
 /**
+* Bandwidth of the links used to translate from CPU units to fsin cycles.
+*/
+long link_bw;
+
+/**
+* Id of the units used for measuring CPU events within a trace.
+*
+* @see cpu_units_t
+* @see cpu_units_l
+*/
+cpu_units_t cpu_units;
+
+/**
 * Id of the request port mechanism.
-* 
+*
 * @see req_mode_t
 * @see r_mode_l
 */
@@ -140,7 +154,7 @@ req_mode_t req_mode;
 
 /**
 * Id of the router arbitration mechanism.
-* 
+*
 * @see arb_mode_t
 * @see atype_l
 */
@@ -148,7 +162,7 @@ arb_mode_t arb_mode;
 
 /**
 * Id of the consumption mode.
-* 
+*
 * @see cons_mode_t
 * @see ctype_l
 */
@@ -156,7 +170,7 @@ cons_mode_t cons_mode;
 
 /**
 * Id of the injection mode.
-* 
+*
 * @see inj_mode_t
 * @see injmode_l
 */
@@ -164,7 +178,7 @@ inj_mode_t inj_mode;
 
 /**
 * Id of the placement strategy.
-* 
+*
 * @see placement_t
 * @see placement_l
 */
@@ -252,7 +266,7 @@ FILE *fp; ///< A pointer to a file. Used for several purposes.
 * .map for channel mapping.
 * .hst for queue occupation histograms.
 */
-char file[128];
+char *file;
 
 #if (EXECUTION_DRIVEN != 0)
 long num_executions;	///< Number of executions, appended to the output filename.
@@ -265,7 +279,7 @@ long num_executions;	///< Number of executions, appended to the output filename.
 * If the file is a dimemas trace only point to point operations and cpu intervals are considered.
 * The FSIN trace format is also allowed.
 */
-char trcfile[128];
+char *trcfile;
 
 long samples;			///< Number of samples (batchs or shots) to take from the current Simulation.
 CLOCK_TYPE batch_time;		///< Sampling period.
@@ -279,7 +293,7 @@ CLOCK_TYPE max_conv_time;		///< Maximum time for Convergency estimation.
 
 /* Global variables - other */
 
-router *network;		///< An array of routers containing the system.
+router  *network;		///< An array of routers containing the system.
 
 CLOCK_TYPE sim_clock;			///< Simulation clock.
 
@@ -309,7 +323,7 @@ batch_t * batch;		///< Array to save all the batchs' stats.
 * The global queue occupation.
 *
 * This value is calculated each cycle.
-* 
+*
 * @see update_period
 * @see global_q_u_current
 */
@@ -320,7 +334,7 @@ double global_q_u_current = 0.0;
 *
 * This is the value shown to the nodes and is updated every #update_period
 * cycles with the value of #global_q_u_current.
-* 
+*
 * @see update_period
 * @see global_q_u_current
 */
@@ -343,10 +357,13 @@ dim * port_coord_dim;			///< An array containig the dimension for each port.
 way * port_coord_way;			///< An array containig the direction (way) for each port.
 channel * port_coord_channel;	///< An array containig the number of virtual channel for each port.
 
-static time_t start_time,	///< Simulation start time / date.
-				end_time;	///< Simulation finish time / date.
+time_t start_time,  ///< Simulation start time / date.
+		end_time;   ///< Simulation finish time / date.
 
-bool_t go_on = TRUE;		///< While this is TRUE the simulation will go on!
+bool_t go_on = B_TRUE;		///< While this is TRUE the simulation will go on!
+bool_t interrupted = B_FALSE;	///< This will become TRUE after SIGINT or SIGKILL so that the final report is printed before finishing the run
+bool_t aborted = B_FALSE;	///< This will become TRUE after any form of deadlock is detected.
+
 
 long reseted = 0;			///< Number of resets.
 CLOCK_TYPE last_reset_time = 0;	///< Time in which the last reset has been performed.
@@ -356,7 +373,7 @@ double inj_load;	///< Injection load	of the current simulation.
 
 /**
 * 'Virtual' Function that runs the simulation.
-* 
+*
 * @see init_functions
 * @see run_network_shotmode
 * @see run_network_trc
@@ -367,7 +384,7 @@ void (* run_network)(void);
 
 /**
 * 'Virtual' Function that performs the selection of the injection ports.
-* 
+*
 * @param i The node in wich the injection is performed.
 * @param dest The destination of the packet.
 * @return The injection port to insert the packet.
@@ -383,7 +400,7 @@ port_type (* select_input_port) (long i, long dest);
 
 /**
 * 'Virtual' Function that performs the search of a neighbor node. Only used by direct topologies.
-* 
+*
 * @param ad A node address.
 * @param wd A dimension (X,Y or Z).
 * @param ww A way (UP or DOWN).
@@ -416,7 +433,7 @@ routing_r (*calc_rr) (long source, long destination);
 
 /**
 * 'Virtual' Function that prepares the request of an output port.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -484,7 +501,7 @@ void (*consume)(long i);
 
 /**
 * 'Virtual' Function that routes a packet.
-* 
+*
 * @param pkt The packet to route.
 * @param d_d The destination dimension is returned here.
 * @param d_w The destination way is returned here.
@@ -508,7 +525,7 @@ bool_t (*check_rr)(packet_t * pkt, dim *d_d, way *d_w);
 
 /**
 * 'Virtual' Function that performs the traffic movement in the network.
-* 
+*
 * @param inject It is TRUE if the injection has to be performed.
 *
 * @see init_functions
@@ -519,7 +536,7 @@ void (*data_movement)(bool_t inject);
 
 /**
 * 'Virtual' Function that performs the arbitration of the output ports.
-* 
+*
 * @param inject It is TRUE if the injection has to be performed.
 *
 * @see init_functions
@@ -530,22 +547,34 @@ void (*data_movement)(bool_t inject);
 void (*arbitrate)(long i, port_type d_p);
 
 /**
+* Deals with interruptions.
+* Whenever a SIGINT or SIGTERM signals are received, the execution will be terminated cleanly by completing the current cycle and printing the final summary.
+*/
+void interrupt_handler(int signal) {
+    interrupted = B_TRUE;
+}
+
+/**
 * Main function.
 *
 * Initializes the simulation & the network.
 * Then runs the simulation & writes the results.
-* 
+*
 * @param argc The number of parameters given in the command line.
 * @param argv Array that constains all the parameters.
 * @return The finalization code. Usually 0.
 */
 int main(int argc, char *argv[]) {
-	packet_t *pkt;
-	long i,p;
+
+    struct sigaction act;
+
+    act.sa_handler = interrupt_handler;
+    sigaction(SIGINT, &act, NULL);
+    sigaction(SIGTERM, &act, NULL);
 
 	time(&start_time);
 	get_conf((long)(argc - 1), argv + 1);
-	sim_clock = 1L; // HAS TO BE ONE for arbitrate to work
+	sim_clock = (CLOCK_TYPE) 1L; // HAS TO BE ONE for arbitrate to work
 
 	srand(r_seed);
 
@@ -569,3 +598,4 @@ int main(int argc, char *argv[]) {
 #endif
 	return 0;
 }
+

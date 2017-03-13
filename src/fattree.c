@@ -1,4 +1,4 @@
-/** 
+/**
 * @file
 * @brief	k-ary n-tree topology tools.
 *
@@ -114,8 +114,7 @@ void create_thintree()
 	long st, r, p;	//current stage, router and port.
 	long st_first, next_st_first;	//if for this and next stage's first element(switch).
 	long sgUp;		// stUp ^ st
-	long router_per_stage,
-		router_per_next_stage;		// Total Number of routers in each stage of a multistage topology. 
+	long router_per_stage;		// Total Number of routers in each stage of a multistage topology.
 
 	// Processors
 	for (i=0; i<nprocs; i++){
@@ -137,7 +136,7 @@ void create_thintree()
 			network[i].op_i[j] = ESCAPE;
 		}
 	}
-	
+
 	next_st_first=nprocs;
 	sgUp=1;		//stUp ^ st
 	router_per_stage=(long)pow(stDown,nstages-1);
@@ -190,7 +189,7 @@ void create_slimtree(){
 	long st_first, next_st_first;	//if for this and next stage's first element(switch).
 	long router_per_stage,
 	     router_per_next_stage;		// Total Number of routers in each stage of a multistage topology.
-	
+
 	for (i=0; i<nprocs; i++){
 		for (j=0; j<ninj; j++) inj_init_queue(&network[i].qi[j]);
 		network[i].rcoord[STAGE]=-1;
@@ -256,14 +255,13 @@ void create_slimtree(){
 * Generates the routing record for a k-ary n-tree.
 *
 * This function allows adaptive routing because no route is defined here.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
-*/ 
+*/
 routing_r fattree_rr_adapt (long source, long destination) {
-	long	i,		// Loop index
-		nhops=1,	// Number of hops
+	long nhops=1,	// Number of hops
 		k=radix/2,	// Number of ports
 		k_n=k;		// k ^ nhops
 	routing_r res;
@@ -272,11 +270,11 @@ routing_r fattree_rr_adapt (long source, long destination) {
 
 	// Search the first common ancester
 	while (source / k_n != destination / k_n){
-		nhops++; 
+		nhops++;
 		k_n=k_n*k;
 	}
 	res.rr=NULL;
-	res.size=nhops*2;	
+	res.size=nhops*2;
 	return res;
 }
 
@@ -284,21 +282,21 @@ routing_r fattree_rr_adapt (long source, long destination) {
 * Generates the routing record for a thin tree.
 *
 * This function allows adaptive routing because no route is defined here.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
-*/ 
+*/
 routing_r thintree_rr_adapt (long source, long destination) {
-	long i, nhops=1, sgDown=stDown;
+	long nhops=1, sgDown=stDown;
 	routing_r res;
-	long passing_router;
+
 	if (source == destination)
 		panic("Self-sent packet");
 
 	// Search the first common ancester
 	while (source / (sgDown) != destination / (sgDown)){
-		nhops++; 
+		nhops++;
 		sgDown=sgDown*stDown;
 	}
 
@@ -311,14 +309,13 @@ routing_r thintree_rr_adapt (long source, long destination) {
 * Generates the routing record for a slimtree.
 *
 * This function allows adaptive routing because no route is defined here.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
-*/ 
+*/
 routing_r slimtree_rr_adapt (long source, long destination) {
-	long	i,		// Loop index
-		nhops=1,	// Number of hops
+	long nhops=1,	// Number of hops
 		sgDown,		// stDown ^ nhops
 		sgUp;		// StUp ^ nhops -2
 	routing_r res;
@@ -341,3 +338,4 @@ routing_r slimtree_rr_adapt (long source, long destination) {
 	res.size=nhops*2;
 	return res;
 }
+

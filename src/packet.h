@@ -58,9 +58,10 @@ typedef struct packet_t {
 		/* ethernet, y las Y representan la secuencia del paquete al que */
 		/* pertenece el phit. Una trama ethernet se divide en varios paquetes */
 		/* El numero de bits que ocupa la secuencia del paquete es: */
-		/* round_up(log(1500/(packet_size_in_phits*phit_size))/log 2) */
+		/* round_up(log(1500/(packet_size_in_phits*phit_len))/log 2) */
 #endif
 
 } packet_t;
 
 #endif /* _packet */
+

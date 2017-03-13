@@ -1,10 +1,10 @@
-/** 
+/**
 * @file
 * @brief	Definition of a literal that links a string to a number.
 *
 * This tools are used for read the fsin.conf file & the command line parameters(arguments)
 * of the simulation & print them in the final brief.
-* 
+*
 * @see get_conf.c
 
 FSIN Functional Simulator of Interconnection Networks
@@ -31,7 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 /**
 * Structure to contain a literal.
 * This is a bijective union between a string & a number.
-* 
+*
 * @see get_conf.c
 * @see print_results.c
 */
@@ -43,7 +43,8 @@ typedef struct literal_t {
 #define LITERAL_END { 0, NULL } ///< This must be the last literal in an array.
 
 // Some declarations
-bool_t literal_value(literal_t * literal, char *  name, long * value);
-bool_t literal_name (literal_t * literal, char ** name, long   value);
+bool_t literal_value(literal_t * literal, char *  name, int * value);
+bool_t literal_name (literal_t * literal, char ** name, int   value);
 
 #endif /* _literal */
+

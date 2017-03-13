@@ -25,7 +25,7 @@ static void drop_transit(long i);
 
 /**
  * Drops in-transit phits/packets
- * 
+ *
  * @param i the node where the phit to drop is.
  */
 void drop_transit(long i){
@@ -34,10 +34,10 @@ void drop_transit(long i){
 
 #if (TRACE_SUPPORT != 0)
 	if (pattern==TRACE)
-	    panic("Should not be dropping packet when trace-driven simulation");
+	    abort_sim("Should not be dropping packet when trace-driven simulation");
 #endif
 #if (EXECUTION_DRIVEN != 0)
-	panic("Should not be dropping packet when execution-driven simulation");
+	abort_sim("Should not be dropping packet when execution-driven simulation");
 #endif
 	for (s_p=0; s_p<p_con; s_p++) {
 		if (network[i].p[s_p].aop == p_drop) {
@@ -70,7 +70,7 @@ void drop_transit(long i){
 *
 * This "Single" version is used when there is a single consumption port,
 * shared among all the VCs. Arbitration is required.
-* 
+*
 * @param i The number of the node in which the consumption is performed.
 */
 void consume_single(long i) {
@@ -96,7 +96,7 @@ void consume_single(long i) {
 *
 * This is the "multiple" version, meaning that in a cycle it is possible to
 * consume phits from all VCs.
-* 
+*
 * @param i The number of the node in which the consumption is performed.
 */
 void consume_multiple(long i) {
@@ -107,7 +107,7 @@ void consume_multiple(long i) {
 		if (network[i].p[s_p].aop == p_con) {
 			rem_queue(&(network[i].p[s_p].q), &ph);	// Consume NOW
 			if (i>=nprocs)
-				printf ("WARNING packet consumed in communication element %d [%d -> %d] %d!!!\n",i,pkt_space[ph.packet].to, pkt_space[ph.packet].from, pkt_space[ph.packet].n_hops );
+				printf ("WARNING packet consumed in communication element %ld [%ld -> %ld] %ld!!!\n",i,pkt_space[ph.packet].to, pkt_space[ph.packet].from, pkt_space[ph.packet].n_hops );
 			phit_away(i, s_p, ph);
 #if (PCOUNT!=0)
 			network[i].pcount--;
@@ -118,7 +118,7 @@ void consume_multiple(long i) {
 
 /**
 * Performs the movement of the data in a direct topology.
-* 
+*
 * @param inject If TRUE new data generation is performed.
 *
 * @see init_functions
@@ -179,7 +179,7 @@ void data_movement_direct(bool_t inject) {
 
 /**
 * Performs the movement of the data in an indirect topology.
-* 
+*
 * @param inject If TRUE new data generation is performed.
 *
 * @see init_functions
@@ -190,7 +190,7 @@ void data_movement_indirect(bool_t inject) {
 		 e,		// port number
 		 ee;	// port requested by port 'e'
 	long to;
-	dim j; way k;
+	dim j;
 
 	for (i=0; i<NUMNODES; i++) {
 		if (plevel & 8)
@@ -265,7 +265,7 @@ void data_movement_indirect(bool_t inject) {
 * Advance packets.
 *
 * Move a phit from an output port to the corresponding input port in the neighbour
-* 
+*
 * @param n The number of the node.
 * @param p The physichal port id to advance.
 */
@@ -287,14 +287,14 @@ void advance(long n, long p) {
 		if (s_p != P_NULL) {
 			if (network[n].p[s_p].aop != d_p)
 			{
-				printf("node %d, port %d, d_p %d, s_p %d\n", n,p, d_p, s_p);
+				printf("node %ld, port %ld, d_p %ld, s_p %ld\n", n,p, d_p, s_p);
 				panic("Bad assignment - move port");
 			}
 			q = &(network[n].p[s_p].q);     // Transit queue to get phit from
 			network[n].op_i[p] = l;			// For next phit
 			if (!queue_len(q))
 			{
-				printf("node %d, port %d, d_p %d, s_p %d\n", n,p, d_p, s_p);
+				printf("node %ld, port %ld, d_p %ld, s_p %ld\n", n,p, d_p, s_p);
 				panic("Should have something to move");
 			}
 			rem_queue(q, &ph);
@@ -323,7 +323,7 @@ void advance(long n, long p) {
 *
 * Gets all kind of statistics, and print the corresponding traces.
 * "old" version, simpler: does not interact with TrGen, just collects statistics.
-* 
+*
 * @param i The node in which the consumption is performed.
 * @param s_p The input port in wich the phit is.
 * @param ph The arrived phit.
@@ -333,7 +333,7 @@ void phit_away(long i, port_type s_p, phit ph) {
 
 	rcvd_phit_count++;
 	if (i!=pkt_space[ph.packet].to){
-		printf("packet %d, from %d to %d arrives to %d\n",ph.packet, pkt_space[ph.packet].from, pkt_space[ph.packet].to, i);
+		printf("packet %ld, from %ld to %ld arrives to %ld\n",ph.packet, pkt_space[ph.packet].from, pkt_space[ph.packet].to, i);
 		panic("Wrong destination");
 	}
 	if(plevel & 32)
@@ -402,7 +402,7 @@ void phit_away(long i, port_type s_p, phit ph) {
 * Moves a phit from a router to one of its neighbors.
 *
 * Complement of advance, actually moves a phit from one output port to an input port
-* 
+*
 * @param i The number of the source node.
 * @param n_n The neighbor node(node to move to).
 * @param s_p Source port (input port of the node).
@@ -416,7 +416,7 @@ void phit_moved(long i, long n_n, port_type s_p, port_type d_p, phit ph) {
 
 	if (queue_space(n_q)<1)
 	{
-		printf("(%d) %d.%d -> %d.%d \n",ph.packet,i,s_p,n_n, d_p);
+		printf("(%ld) %ld.%ld -> %ld.%ld \n",ph.packet,i,s_p,n_n, d_p);
 		panic("Should not be moving when no space in receiving port");
 	}
 
@@ -429,7 +429,7 @@ void phit_moved(long i, long n_n, port_type s_p, port_type d_p, phit ph) {
 			}
 			if (network[i].timeout_packet == ph.packet)	{
 				if (network[i].timeout_counter < timeout_lower_limit)
-					network[i].congested=FALSE;
+					network[i].congested=B_FALSE;
 				network[i].timeout_counter = (CLOCK_TYPE) 0L;
 				network[i].timeout_packet = NULL_PACKET;
 			}
@@ -498,3 +498,4 @@ void phit_moved(long i, long n_n, port_type s_p, port_type d_p, phit ph) {
 	if (i == monitored)
 		port_utilization[d_p]++;
 }
+

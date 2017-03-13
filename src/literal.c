@@ -1,10 +1,10 @@
-/** 
+/**
 * @file
 * @brief	Tools for reading simulation parameter.
 *
 * This tools are used for read the fsin.conf file & the command line parameters(arguments)
 * of the simulation & for printing the final summary.
-* 
+*
 * @see get_conf.c
 * @see print_results.c
 
@@ -33,42 +33,43 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 * Searches for a string in a literal array.
 *
 * This function takes an array of literals and finds the value corresponding to a string.
-* 
+*
 * @param l array of literals.
 * @param name the string we are searching for.
-* @param value the corresponding value for the string is returned here.
+* @param value the corresponding value for the string is returned here. As this is typically an enum, type needs to be int to avoid memory corruption.
 * @return if 'name' is in 'l' TRUE, else FALSE.
 * @see get_conf.c
 */
-bool_t literal_value(literal_t * l, char * name, long * value){
+bool_t literal_value(literal_t * l, char * name, int * value){
 	while(l->name) {
 		if(!strncmp(name, l->name, strlen(name))) {
 			*value = l->value;
-			return TRUE;
+			return B_TRUE;
 		}
 		l += 1;
 	}
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Searches for a value in a literal array.
 *
 * This function takes an array of literals and finds the string corresponding to a value.
-* 
+*
 * @param l an array of literals.
 * @param name the corresponding string is returned here.
 * @param value the value we are searching for.
 * @return if 'value' is in 'l' TRUE, else FALSE.
 * @see print_results.c
 */
-bool_t literal_name(literal_t * l, char ** name, long value){
-	while(l->name) {	
+bool_t literal_name(literal_t * l, char ** name, int value){
+	while(l->name) {
 		if(value == l->value) {
 			*name = l->name;
-			return TRUE;
+			return B_TRUE;
 		}
 		l += 1;
 	}
-	return FALSE;
+	return B_FALSE;
 }
+

@@ -12,3 +12,4 @@ long butterfly(long node, long nnodes);
 long complement(long node, long nnodes);
 
 #endif /* _pattern */
+

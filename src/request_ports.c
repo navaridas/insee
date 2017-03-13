@@ -65,7 +65,7 @@ void request_ports_init(void) {
 * We have ndim escape channels. Each one using DOR routing in different order
 * of dimensions. For example for ndim=2 XY & YX.
 * We decide de channel when we inject & we cannot change it.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -79,7 +79,7 @@ void request_port_double_oblivious(long i, port_type s_p) {
 	way k;		// coords of port s_p making request
 	dim ji;
 
-	if (!preliminary_check (i, s_p, TRUE))
+	if (!preliminary_check (i, s_p, B_TRUE))
 		return;
 	// Will use array mt -- instead of d_d, d_w
 
@@ -96,7 +96,7 @@ void request_port_double_oblivious(long i, port_type s_p) {
 			if (mt[dir(j,k)]) {
 				// This is a good way to advance!!
 				d_p = port_address(dir(j,k), d_c);
-				if (!check_restrictions(i, s_p, d_p, TRUE)) {
+				if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 					if (extract && s_p >= p_inj_first)
 						extract_packet(i, s_p);
 					return;
@@ -116,7 +116,7 @@ void request_port_double_oblivious(long i, port_type s_p) {
 *
 * Routes equal to bubble double but we are able to change our channel
 * when the bubble restriction allows us.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -130,7 +130,7 @@ void request_port_double_adaptive (long i, port_type s_p) {
 	long ji;
 	long bets;
 
-	if (!preliminary_check (i, s_p, TRUE)) return;
+	if (!preliminary_check (i, s_p, B_TRUE)) return;
 	// Will use array mt -- instead of d_d, d_w
 
 	if (s_p < p_inj_first)	// in transit traffic try to continue in the same VC.
@@ -147,7 +147,7 @@ another_attempt:
 			if (mt[dir(j,k)]) {
 				// This is a good way to advance!!
 				d_p = port_address(dir(j,k), d_c);
-				if (!check_restrictions(i, s_p, d_p, TRUE)) {
+				if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 					// we can try another VC -- THE DIRTY WAY!
 					if (bets == nchan) {
 						// No more vchans to try
@@ -177,7 +177,7 @@ another_attempt:
 *
 * Equal to bubble double routing but with all the possible dimension orders XY XZ YX YZ ZX ZY.
 * The packets aren't allowed to move to another channel.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -193,7 +193,7 @@ void request_port_hexa_oblivious(long i, port_type s_p) {
 	if (nchan != 6 || ndim != 3)
 		panic("Bubble_hexa_oblivious only for 3-D and 6 VC");
 
-	if (!preliminary_check (i, s_p, TRUE))
+	if (!preliminary_check (i, s_p, B_TRUE))
 		return;
 	// Will use array mt -- instead of d_d, d_w
 
@@ -218,7 +218,7 @@ void request_port_hexa_oblivious(long i, port_type s_p) {
 			if (mt[dir(j,k)]){
 				// This is a good way to advance!!
 				d_p = port_address(dir(j,k), d_c);
-				if (!check_restrictions(i, s_p, d_p, TRUE)){
+				if (!check_restrictions(i, s_p, d_p, B_TRUE)){
 					if (extract && s_p >= p_inj_first)
 						extract_packet(i, s_p);
 					return;
@@ -238,7 +238,7 @@ void request_port_hexa_oblivious(long i, port_type s_p) {
 *
 * Equal to bubble hexa oblivious routing but packets can move to another channel when matchs
 * bubble restriction.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -256,7 +256,7 @@ void request_port_hexa_adaptive(long i, port_type s_p) {
 	if (nchan != 6 || ndim != 3)
 		panic("Bubble hexa? adaptive only for 3-D and 6 VC");
 
-	if (!preliminary_check (i, s_p, TRUE))
+	if (!preliminary_check (i, s_p, B_TRUE))
 		return;
 	// Will use array mt -- instead of d_d, d_w
 
@@ -286,7 +286,7 @@ void request_port_hexa_adaptive(long i, port_type s_p) {
 				if (mt[dir(j,k)]){
 					// This is a good way to advance!!
 					d_p = port_address(dir(j,k), d_c);
-					if (!check_restrictions(i, s_p, d_p, TRUE))
+					if (!check_restrictions(i, s_p, d_p, B_TRUE))
 						d_c = (d_c + 1) % nchan;
 					else{
 						network[i].p[d_p].req[s_p] = network[i].p[s_p].tor;
@@ -307,7 +307,7 @@ void request_port_hexa_adaptive(long i, port_type s_p) {
 *
 * Bubble adaptive random for short messages.
 * Escape channel for long messages.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -354,7 +354,7 @@ void request_port_bimodal_random (long i, port_type s_p){
 *
 * It is possible to have several oblivious channels in parallel. A static selection of
 * channel is done at injection time. After that, the same VC is used all the time.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -365,9 +365,9 @@ void request_port_bubble_oblivious (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
 	channel d_c;  // Destination channel
 	dim j;
-	channel l; // coords of port s_p making request
+	channel l=-1; // coords of port s_p making request
 
-	if (!preliminary_check (i, s_p, TRUE)) return;
+	if (!preliminary_check (i, s_p, B_FALSE)) return;
 	// Won't use array mt -- use d_d and d_w instead
 
 	if (s_p < p_inj_first) {
@@ -384,7 +384,7 @@ void request_port_bubble_oblivious (long i, port_type s_p) {
 
 	d_p = port_address(dir(d_d, d_w), d_c);
 
-	if (!check_restrictions (i, s_p, d_p, TRUE)) {
+	if (!check_restrictions (i, s_p, d_p, B_TRUE)) {
 		if (extract && s_p >= p_inj_first)
 			extract_packet(i, s_p);
 		return;
@@ -399,7 +399,7 @@ void request_port_bubble_oblivious (long i, port_type s_p) {
 * It tries to continue in the same dim/way in an adaptive VC. If not possible, then
 * jump to another, profitable dim, still using adaptive VCs.
 * If no adaptive, profitable dim is found, go to ESCAPE VC.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -409,12 +409,12 @@ void request_port_bubble_oblivious (long i, port_type s_p) {
 void request_port_bubble_adaptive_smart(long i, port_type s_p) {
 	channel d_c; // Destination channel
 	dim j;
-	way k;
-	channel l; // coords of port s_p making request
+	way k=-1;
+	channel l=-1; // coords of port s_p making request
+	long d_n;
 	bet_type bt;
-	long d_n; // destination (Neighbor) node
 
-	if (!preliminary_check(i, s_p, TRUE)) return;
+	if (!preliminary_check(i, s_p, B_TRUE)) return;
 
 	// Packet is in transit
 	bt = network[i].p[s_p].bet;
@@ -456,8 +456,8 @@ void request_port_bubble_adaptive_smart(long i, port_type s_p) {
 		d_p = port_address(dir(d_d, d_w), d_c);
 
 		// Now let us check that space is we can move towards destination
-		d_n = network[i].nbor[dir(d_d, d_w)];
-		if (!check_restrictions(i, s_p, d_p, TRUE)) {
+		//d_n = network[i].nbor[dir(d_d, d_w)];
+		if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 			// Nope!! Go on trying...
 			if (bt < (ndim-1))
 				bt = bt+1;
@@ -480,7 +480,7 @@ void request_port_bubble_adaptive_smart(long i, port_type s_p) {
 		check_rr(&pkt_space[ph->packet], &d_d, &d_w);
 		d_p = port_address(dir(d_d, d_w), ESCAPE);
 		network[i].p[s_p].bet = B_TRIAL_0;
-		if (!check_restrictions(i, s_p, d_p, TRUE)) {
+		if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 			// Cannot request ESCAPE -- even this is full!!
 			if (extract && s_p >= p_inj_first)
 				extract_packet(i, s_p);
@@ -499,7 +499,7 @@ void request_port_bubble_adaptive_smart(long i, port_type s_p) {
 * If packet cannot continue in the same virtual channel, it tries to go to the adaptive
 * VC with most space in its queue. If no adaptive, profitable dim is found
 * due to a congestion control mechanism, then go to ESCAPE VC.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -514,7 +514,7 @@ void request_port_bubble_adaptive_shortest (long i, port_type s_p) {
 	port_type c_p; // candidate destination port
 	long s_c_p; // space at candidate destination port's queue
 
-	if (!preliminary_check(i, s_p, TRUE)) return;
+	if (!preliminary_check(i, s_p, B_TRUE)) return;
 
 	// Packet is in transit
 	s_d_p = -1;
@@ -524,7 +524,7 @@ void request_port_bubble_adaptive_shortest (long i, port_type s_p) {
 			c_d_n = network[i].nbor[dir(j,k)];
 			for (l=1; l<nchan; l++) {
 				c_p = port_address(dir(j,k), l);
-				if (!check_restrictions(i, s_p, c_p, TRUE))
+				if (!check_restrictions(i, s_p, c_p, B_TRUE))
 					continue; // bubble check!!
 				s_c_p = queue_space(&(network[c_d_n].p[c_p].q));
 				if (s_c_p > s_d_p) {
@@ -544,7 +544,7 @@ void request_port_bubble_adaptive_shortest (long i, port_type s_p) {
 	// At this point, no adaptive channel is available. Let us request escape, just in case
 	check_rr(&pkt_space[ph->packet], &d_d, &d_w);
 	d_p = port_address(dir(d_d, d_w), ESCAPE);
-	if (!check_restrictions(i, s_p, d_p, TRUE)) {
+	if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 		// Cannot request ESCAPE -- even this is full!!
 		if (extract && s_p >= p_inj_first)
 			extract_packet(i, s_p);
@@ -558,7 +558,7 @@ void request_port_bubble_adaptive_shortest (long i, port_type s_p) {
 *
 * It tries to continue in the same dim/way in an adaptive VC. If not possible, then jump
 * to another random adaptive VCs. If no adaptive, profitable dim is found, go to ESCAPE VC.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -570,7 +570,7 @@ void request_port_bubble_adaptive_random (long i, port_type s_p) {
 	dim j; way k; channel l;
 	long rp, ncand;
 
-	if (!preliminary_check(i, s_p, TRUE))
+	if (!preliminary_check(i, s_p, B_TRUE))
 		return;
 
 	// Packet is in transit
@@ -578,23 +578,23 @@ void request_port_bubble_adaptive_random (long i, port_type s_p) {
 	for (d_p = 0; d_p<p_inj_first; d_p++) {
 		j = port_coord_dim[d_p]; k = port_coord_way[d_p]; l = port_coord_channel[d_p];
 		if ((l==ESCAPE) || !mt[dir(j,k)]) {
-			candidates[d_p] = FALSE;
+			candidates[d_p] = B_FALSE;
 			continue;
 		}
-		if (!check_restrictions(i, s_p, d_p, TRUE)) {
-			candidates[d_p] = FALSE;
+		if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
+			candidates[d_p] = B_FALSE;
 			continue;
 		}
 		// A candidate that is viable: adaptive, right way, space & bubble available
 		ncand++;
-		candidates[d_p] = TRUE;
+		candidates[d_p] = B_TRUE;
 	}
 
 	if (!ncand) {
 		// At this point, no adaptive channel is available. Let us request escape, just in case
 		check_rr(&pkt_space[ph->packet], &d_d, &d_w);
 		d_p = port_address(dir(d_d, d_w), ESCAPE);
-		if (!check_restrictions(i, s_p, d_p, TRUE)) {
+		if (!check_restrictions(i, s_p, d_p, B_TRUE)) {
 			// Cannot request ESCAPE -- even this is full!!
 			if (extract && s_p >= p_inj_first)
 				extract_packet(i, s_p);
@@ -621,7 +621,7 @@ void request_port_bubble_adaptive_random (long i, port_type s_p) {
 /**
 * Request a port using dally trc mechanism.
 *
-* In trc all packets are injected in Escape channel 0. 
+* In trc all packets are injected in Escape channel 0.
 * Packets remain in channel 0 until reaching a wrap-around
 * link where they switch to Escape channel 1.
 *
@@ -634,10 +634,10 @@ void request_port_bubble_adaptive_random (long i, port_type s_p) {
 void request_port_dally_trc(long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
 	channel d_c;  // Destination channel
-	dim j; way k; channel l; // coords of port s_p making request
+	dim j; channel l; // coords of port s_p making request
 	long a_x, a_y, a_z;
 
-	if (!preliminary_check(i, s_p, TRUE)) 
+	if (!preliminary_check(i, s_p, B_FALSE))
 		return;
 	// Won't use array mt -- use d_d and d_w instead
 
@@ -648,7 +648,7 @@ void request_port_dally_trc(long i, port_type s_p) {
 	}
 	else
 		j = INJ;
-		
+
 	if ((j == INJ) || (j != d_d))
 		d_c = 1; // ONE
 	else d_c = l; // "L"
@@ -675,7 +675,7 @@ void request_port_dally_trc(long i, port_type s_p) {
 	}
 
 	d_p = port_address(dir(d_d, d_w), d_c);
-	if (!check_restrictions(i, s_p, d_p, FALSE)) {
+	if (!check_restrictions(i, s_p, d_p, B_FALSE)) {
 		if (extract && s_p >= p_inj_first)
 			extract_packet(i, s_p);
 		return;
@@ -686,10 +686,10 @@ void request_port_dally_trc(long i, port_type s_p) {
 /**
 * Request a port using basic dally algorithm.
 *
-* In basic those packets that have to cross the wrap-around links of a dimension 
-* circulate through Escape channel 0. 
+* In basic those packets that have to cross the wrap-around links of a dimension
+* circulate through Escape channel 0.
 * Those that do not have to use the wrap-around links use the Escape channel 1.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -698,11 +698,11 @@ void request_port_dally_trc(long i, port_type s_p) {
 */
 void request_port_dally_basic (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	channel d_c;  // Destination channel
+	channel d_c=-1;  // Destination channel
 	long a_x, a_y, a_z;
 	packet_t * pkt;
 
-	if (!preliminary_check(i, s_p, TRUE)) 
+	if (!preliminary_check(i, s_p, B_FALSE))
 		return;
 	// Won't use array mt -- use d_d and d_w instead
 
@@ -735,7 +735,7 @@ void request_port_dally_basic (long i, port_type s_p) {
 	}
 
 	d_p = port_address(dir(d_d, d_w), d_c);
-	if (!check_restrictions(i, s_p, d_p, FALSE)) {
+	if (!check_restrictions(i, s_p, d_p, B_FALSE)) {
 		if (extract && s_p >= p_inj_first)
 			extract_packet(i, s_p);
 		return;
@@ -748,7 +748,7 @@ void request_port_dally_basic (long i, port_type s_p) {
 *
 * Similar to basic, but packets not using the wrap-around links can use
 * both Escape channels.
-* 
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -759,9 +759,9 @@ void request_port_dally_improved(long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
 	channel d_c;  // Destination channel
 	long a_x, a_y, a_z;
-	long tmp_dim, passes;
+	long tmp_dim=-1, passes=-1;
 
-	if (!preliminary_check(i, s_p, TRUE)) 
+	if (!preliminary_check(i, s_p, B_FALSE))
 		return;
 	// Won't use array mt -- use d_d and d_w instead
 
@@ -795,15 +795,16 @@ void request_port_dally_improved(long i, port_type s_p) {
 		else
 			d_c = 0;
 		d_p = port_address(dir(d_d, d_w), d_c);
-		if (!check_restrictions(i, s_p, d_p, FALSE))
+		if (!check_restrictions(i, s_p, d_p, B_FALSE)){
 			if (d_c == 1)
 				d_c = 0;
 			else
 				d_c = 1;
+		}
 	}
 
 	d_p = port_address(dir(d_d, d_w), d_c);
-	if (!check_restrictions(i, s_p, d_p, FALSE)) {
+	if (!check_restrictions(i, s_p, d_p, B_FALSE)) {
 		if (extract && s_p >= p_inj_first)
 			extract_packet(i, s_p);
 		return;
@@ -815,8 +816,8 @@ void request_port_dally_improved(long i, port_type s_p) {
 * Request a port using the dally algorithm + some VCs.
 *
 * Adaptive port request. Channels 0 and 1 are the Escape channels,
-* following the improved algorithm. Other virtual channels can adapt freely. 
-* 
+* following the improved algorithm. Other virtual channels can adapt freely.
+*
 * @param i The node in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -825,12 +826,12 @@ void request_port_dally_improved(long i, port_type s_p) {
 */
 void request_port_dally_adaptive (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	dim j; 
-	way k; 
+	dim j;
+	way k;
 	channel l;
 	long rp, ncand;
 
-	if (!preliminary_check(i, s_p, TRUE)) 
+	if (!preliminary_check(i, s_p, B_FALSE))
 		return;
 
 	// Packet is in transit
@@ -840,16 +841,16 @@ void request_port_dally_adaptive (long i, port_type s_p) {
 		k = port_coord_way[d_p];
 		l = port_coord_channel[d_p];
 		if ((l<=1) || !mt[dir(j,k)]) {
-			candidates[d_p] = FALSE;
+			candidates[d_p] = B_FALSE;
 			continue;
 		}
-		if (!check_restrictions(i, s_p, d_p, FALSE)) {
-			candidates[d_p] = FALSE;
+		if (!check_restrictions(i, s_p, d_p, B_FALSE)) {
+			candidates[d_p] = B_FALSE;
 			continue;
 		}
 		// A candidate that is viable: adaptive, right way, space available
 		ncand++;
-		candidates[d_p] = TRUE;
+		candidates[d_p] = B_TRUE;
 	}
 
 	if (!ncand) {
@@ -878,7 +879,7 @@ void request_port_dally_adaptive (long i, port_type s_p) {
 * Checks if a request of an output port is required or not. It returns FALSE if the
 * queue is empty, the port is already assigned, or if the packet at the head of the queue
 * has reached its final destination.
-* 
+*
 * @param i The node in which the checking is performed.
 * @param s_p The port we are checking.
 * @param fully_check If the direction matrix must be altered this must be TRUE.
@@ -889,32 +890,32 @@ bool_t preliminary_check(long i, port_type s_p, bool_t fully_check) {
 
 	q = &(network[i].p[s_p].q); // Local queue
 	if (!queue_len(q))
-		return FALSE; // Nothing to be scheduled
+		return B_FALSE; // Nothing to be scheduled
 	ph = head_queue(q); // Let us check head of queue...
 	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL))
-		return FALSE; // It is NOT a routing record
+		return B_FALSE; // It is NOT a routing record
 
 	// At this point, we have something to route
 	if ((d_p = network[i].p[s_p].aop) != P_NULL) {
 		if (network[i].p[d_p].sip != s_p)
 			panic("Output port should be reserved for me");
-		return FALSE; // I've got the port already assigned
+		return B_FALSE; // I've got the port already assigned
 	}
 
 	if (network[i].p[s_p].tor == CLOCK_MAX)
 		network[i].p[s_p].tor = sim_clock; // Time of first reservation attempt
 
-	if (fully_check)
+	if (fully_check){
 		if (check_rr_fully(&pkt_space[ph->packet])) {
 			network[i].p[p_con].req[s_p] = network[i].p[s_p].tor;
-			return FALSE;
+			return B_FALSE;
 		}
-	else
+    } else
 		if (check_rr(&pkt_space[ph->packet], &d_d, &d_w)) {
 			network[i].p[p_con].req[s_p] = network[i].p[s_p].tor;
-			return FALSE;
+			return B_FALSE;
 		}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -922,7 +923,7 @@ bool_t preliminary_check(long i, port_type s_p, bool_t fully_check) {
 *
 * If a packet is the cause of head-of-line blocking at a transit queue then
 * removes it from the queue's head.
-* 
+*
 * @param i The node in which the extraction will be performed.
 * @param injector The injection queue which extract from.
 */
@@ -942,7 +943,7 @@ void extract_packet (long i, port_type injector) {
 *
 * Checks a routing record and indicates the direction/way of choice, following the
 * dimension order routing algorithm. (order: x+ x- y+ y- z+ z-)
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired dimesion is returned here.
 * @param w The elected direction (way) is returned here.
@@ -961,15 +962,15 @@ bool_t check_rr_dim_o_r(packet_t * pkt, dim *d, way *w) {
 		if (pkt->rr.rr[j] > 0){
 			*d = j;
 			*w = UP;
-			return FALSE;
+			return B_FALSE;
 		}
 		else if (pkt->rr.rr[j] < 0){
 			*d = j;
 			*w = DOWN;
-			return FALSE;
+			return B_FALSE;
 		}
 	}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -977,7 +978,7 @@ bool_t check_rr_dim_o_r(packet_t * pkt, dim *d, way *w) {
 *
 * Checks a routing record and indicates the direction/way of choice, following the
 * direction order routing algorithm. (order: x+ y+ z+ x- y- z-)
-* 
+*
 * @param pkt The packet to route.
 * @param d The selected dimesion is returned here.
 * @param w The chosen direction (way) is returned here.
@@ -996,20 +997,20 @@ bool_t check_rr_dir_o_r(packet_t * pkt, dim *d, way *w) {
 		if (pkt->rr.rr[j] > 0){
 			*d = j;
 			*w = UP;
-			return FALSE;
+			return B_FALSE;
 		}
 	for (j=D_X; j<ndim; j++)
 		if (pkt->rr.rr[j] < 0) {
 			*d = j;
 			*w = DOWN;
-			return FALSE;
+			return B_FALSE;
 		}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
 * Updates mt Matrix using a routing record.
-* 
+*
 * @param pkt The packet to route.
 * @return TRUE if the phit has reached its final destination.
 */
@@ -1017,27 +1018,27 @@ bool_t check_rr_fully (packet_t * pkt) {
 	dim d_d;
 	bool_t res;
 
-	res = TRUE;
+	res = B_TRUE;
 	for (d_d=D_X; d_d<ndim; d_d++) {
 		if (pkt->rr.rr[d_d] > 0) {
-			mt[dir(d_d,UP)] = TRUE;
-			res = FALSE;
+			mt[dir(d_d,UP)] = B_TRUE;
+			res = B_FALSE;
 			if (nways > 1)
-				mt[dir(d_d,DOWN)] = FALSE;
+				mt[dir(d_d,DOWN)] = B_FALSE;
 		}
 		else if (pkt->rr.rr[d_d] < 0) {
-			mt[dir(d_d,UP)] = FALSE;
+			mt[dir(d_d,UP)] = B_FALSE;
 			if (nways > 1) {
-				mt[dir(d_d,DOWN)] = TRUE;
-				res = FALSE;
+				mt[dir(d_d,DOWN)] = B_TRUE;
+				res = B_FALSE;
 			}
 			else
 				panic("Cannot have negative rr when unidirectional");
 		}
 		else {
-			mt[dir(d_d,UP)] = FALSE;
+			mt[dir(d_d,UP)] = B_FALSE;
 			if (nways > 1)
-				mt[dir(d_d,DOWN)] = FALSE;
+				mt[dir(d_d,DOWN)] = B_FALSE;
 		}
 	}
 	return res;
@@ -1052,7 +1053,7 @@ bool_t check_rr_fully (packet_t * pkt) {
 * (1) If req_mode == OBLIVIOUS_REQ, meaning that several channels in parallel are being used in a oblivious mode.
 *     Then the bubble restriction is applied to all channels.
 * (2) If (bub_adap) then a bubble is required to INJECT into the adaptive channels.
-* 
+*
 * @param i The node in which we are checking.
 * @param s_p Source port (The packet is currently here).
 * @param d_p Destination port (The room is checked here).
@@ -1062,10 +1063,9 @@ bool_t check_rr_fully (packet_t * pkt) {
 bool_t check_restrictions (long i, port_type s_p, port_type d_p, bool_t chkbub) {
 	dim j; way k; channel l;
 	long d_n; // Destination node. THIS node is "i"
-	long d_np; // Destination node port. 
 
 	if (d_p == p_con)
-		return TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
+		return B_TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
 	// Let us check VCT restriction
 	j = port_coord_dim[d_p];
 	k = port_coord_way[d_p];
@@ -1073,10 +1073,10 @@ bool_t check_restrictions (long i, port_type s_p, port_type d_p, bool_t chkbub) 
 	d_n = network[i].nbor[dir(j,k)];
 
 	if (queue_space(&(network[d_n].p[d_p].q)) < pkt_len || network[i].p[dir(j,k)].faulty)
-		return FALSE; // No space at destination / broken link
+		return B_FALSE; // No space at destination / broken link
 
 	if (!chkbub)
-		return TRUE; // Simple VCT check
+		return B_TRUE; // Simple VCT check
 
 	// Let us check additional restrictions
 	if ((req_mode == BUBBLE_OBLIVIOUS_REQ) || (req_mode == DOUBLE_OBLIVIOUS_REQ) ||
@@ -1084,34 +1084,34 @@ bool_t check_restrictions (long i, port_type s_p, port_type d_p, bool_t chkbub) 
 		switch (j) {
 		case D_X:
 			if (!bub_x)
-				return TRUE;
+				return B_TRUE;
 			if ((s_p != d_p) && (queue_space(&(network[i].p[d_p].q)) < (bub_x*pkt_len)))
-				return FALSE;
+				return B_FALSE;
 			break;
 		case D_Y:
 			if (!bub_y)
-				return TRUE;
+				return B_TRUE;
 			if ((s_p != d_p) && (queue_space(&(network[i].p[d_p].q)) < (bub_y*pkt_len)))
-				return FALSE;
+				return B_FALSE;
 			break;
 		case D_Z:
 			if (!bub_z)
-				return TRUE;
+				return B_TRUE;
 			if ((s_p != d_p) && (queue_space(&(network[i].p[d_p].q)) < (bub_z*pkt_len)))
-				return FALSE;
+				return B_FALSE;
 			break;
 		default: break;
 		}
 	}
-	
+
 	// Destination channel is adaptive. VCT allows pass. What about bubble to adaptive (bub_adap)? Only used when injecting
 	if (!bub_adap[network[i].congested])
-		return TRUE;
+		return B_TRUE;
 	if (s_p >= p_inj_first) {
 		if (queue_space(&(network[i].p[d_p].q)) < (bub_adap[network[i].congested]*pkt_len))
-			return FALSE;
+			return B_FALSE;
 	}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1120,7 +1120,7 @@ bool_t check_restrictions (long i, port_type s_p, port_type d_p, bool_t chkbub) 
 * Checks if a request of an output port is required or not. It returns FALSE if the
 * queue is empty, the port is already assigned, or if the packet at the head of the queue
 * has reached its final destination.
-* 
+*
 * @param i The node in which the checking is performed.
 * @param s_p The port we are checking.
 * @param fully_check If the direction matrix must be altered this must be TRUE.
@@ -1129,16 +1129,16 @@ bool_t check_restrictions (long i, port_type s_p, port_type d_p, bool_t chkbub) 
 bool_t preliminary_check_trees(long i, port_type s_p, bool_t fully_check) {
 	q = &(network[i].p[s_p].q);	// Local queue
 	if (!queue_len(q))
-		return FALSE;	// Nothing to be scheduled
+		return B_FALSE;	// Nothing to be scheduled
 	ph = head_queue(q);	// Let us check head of queue...
 	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL))
-		return FALSE;	// It is NOT a routing record
+		return B_FALSE;	// It is NOT a routing record
 
 	// At this point, we have something to route
 	if ((d_p = network[i].p[s_p].aop) != P_NULL) {
 		if (network[i].p[d_p].sip != s_p)
 			panic("Output port should be reserved for me");
-		return FALSE; // I've got the port already assigned
+		return B_FALSE; // I've got the port already assigned
 	}
 
 	id=i;	// The id of the local router/switch
@@ -1148,9 +1148,9 @@ bool_t preliminary_check_trees(long i, port_type s_p, bool_t fully_check) {
 	curr_p=s_p;	//source port.     GLOBAL
 	if ( check_rr(&pkt_space[ph->packet], &d_d, &d_w) ){
 		network[i].p[p_con].req[s_p] = network[i].p[s_p].tor;
-		return FALSE;
+		return B_FALSE;
 	}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1158,7 +1158,7 @@ bool_t preliminary_check_trees(long i, port_type s_p, bool_t fully_check) {
 *
 * If a packet is the cause of head-of-line blocking at a queue then
 * removes it from the queue's head.
-* 
+*
 * @param i The node in which the extraction will be performed.
 * @param injector The injection queue which extract from.
 */
@@ -1175,7 +1175,7 @@ void extract_packet_trees (long i, port_type injector) {
 *
 * The virtual cut-through restriction (room for at least one packet in the destination)
 * is always checked.
-* 
+*
 * @param i The node in which we are checking.
 * @param s_p Source VC port (The packet is currently here).
 * @param d_p Destination VC port (The room is checked here).
@@ -1187,19 +1187,19 @@ bool_t check_restrictions_trees (long i, port_type s_p, port_type d_p){
 	port_type aux;
 
 	if (d_p == p_con)
-		return TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
+		return B_TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
 	// Let us check VCT restriction
 	j = d_p/nchan; // physichal port
 	l = d_p%nchan; // VC id
 	if ((d_n = network[i].nbor[j]) == NULL_PORT){
 		panic("Trying to transmit through an unattached link");
-		return FALSE;
+		return B_FALSE;
 	}
 	aux=(network[i].nborp[j]*nchan)+l;
 	if (queue_space(&(network[d_n].p[aux].q)) < pkt_len)
-		return FALSE; // No space at destination
+		return B_FALSE; // No space at destination
 
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1207,7 +1207,7 @@ bool_t check_restrictions_trees (long i, port_type s_p, port_type d_p){
 *
 * When going upward: adapts.
 * When going downward: obeys the routing record (except slimtree that can adapt).
-* 
+*
 * @param i The switch in which the request is performed.
 * @param s_p The source (input) port which is requesting the output port.
 *
@@ -1216,16 +1216,13 @@ bool_t check_restrictions_trees (long i, port_type s_p, port_type d_p){
 */
 void request_port_tree (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	channel d_c;  // Destination channel
-	dim j;
-	channel l; // coords of port s_p making request
 
 	//		+-> check packet availabilty.
 	//		+-> writes time of request information.
 	//		+-> check if have arrived.
 	//		+-> prepares d_d calculating routing record.
 	//		|
-	if (!preliminary_check_trees (i, s_p, FALSE)) return;
+	if (!preliminary_check_trees (i, s_p, B_FALSE)) return;
 
 	d_p = d_d;
 
@@ -1270,7 +1267,7 @@ port_type min_queue_occupation(port_type first, port_type last){
 * Routes in a fattree.
 *
 * Adaptive routing in fattrees.
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1282,7 +1279,7 @@ port_type min_queue_occupation(port_type first, port_type last){
 bool_t check_rr_fattree_adaptive(packet_t * pkt, dim *d, way *w) {
 	// a hop for each routing record value, so we have arrive to our destination:)
 	if (pkt->rr.size == pkt->n_hops)
-		return TRUE;
+		return B_TRUE;
 	*w=0;	// Way has no sense in multistage.
 
 	// in a fattree: stDown == k == stUp;
@@ -1294,15 +1291,15 @@ bool_t check_rr_fattree_adaptive(packet_t * pkt, dim *d, way *w) {
 		*d=min_queue_occupation(
 			(((pkt->to / (long)pow(stDown, network[id].rcoord[STAGE])) % stDown )+ stDown)*nchan,
 			(((pkt->to / (long)pow(stDown, network[id].rcoord[STAGE])) % stDown )+ stDown + 1)*nchan );
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Routes in a fattree.
 *
-* Static routing in fattrees. Upward path depends on the source. 
+* Static routing in fattrees. Upward path depends on the source.
 * Downward path depends on the destination(as always).
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1314,7 +1311,7 @@ bool_t check_rr_fattree_adaptive(packet_t * pkt, dim *d, way *w) {
 bool_t check_rr_fattree_static(packet_t * pkt, dim *d, way *w) {
 	// a hop for each routing record value, so we have arrive to our destination:)
 	if (pkt->rr.size == pkt->n_hops)
-		return TRUE;
+		return B_TRUE;
 	*w=0;	// Way has no sense in multistage.
 
 	// in a fattree: stDown == k == stUp;
@@ -1324,14 +1321,14 @@ bool_t check_rr_fattree_static(packet_t * pkt, dim *d, way *w) {
 		*d=((((pkt->from / (long)pow(stDown, network[id].rcoord[STAGE]))+(curr_p%nchan)) % stDown)*nchan) + (curr_p%nchan) ;
 	else	// going down static.
 		*d=((((pkt->to / (long)pow(stDown, network[id].rcoord[STAGE])) % stDown )+ stDown)*nchan) + (curr_p%nchan);
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Routes in a thintree.
 *
 * Adaptive routing in thintrees.
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1343,7 +1340,7 @@ bool_t check_rr_fattree_static(packet_t * pkt, dim *d, way *w) {
 bool_t check_rr_thintree_adaptive(packet_t * pkt, dim *d, way *w) {
 	// a hop for each routing record value, so we have arrive to our destination:)
 	if (pkt->rr.size == pkt->n_hops)
-		return TRUE;
+		return B_TRUE;
 	*w=0;	// Way has no sense in multistage.
 
 	if (pkt->n_hops==0)	// NIC
@@ -1354,15 +1351,15 @@ bool_t check_rr_thintree_adaptive(packet_t * pkt, dim *d, way *w) {
 		*d=min_queue_occupation(
 			(((pkt->to/(long)pow(stDown, network[id].rcoord[STAGE]))%stDown)+stUp)*nchan,
 			(((pkt->to/(long)pow(stDown, network[id].rcoord[STAGE]))%stDown)+stUp+1)*nchan);
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Routes in a thintree.
 *
-* Static routing in thintrees. Upward path depends on the source. 
+* Static routing in thintrees. Upward path depends on the source.
 * Downward path depends on the destination(as always).
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1374,7 +1371,7 @@ bool_t check_rr_thintree_adaptive(packet_t * pkt, dim *d, way *w) {
 bool_t check_rr_thintree_static(packet_t * pkt, dim *d, way *w) {
 	// a hop for each routing record value, so we have arrive to our destination:)
 	if (pkt->rr.size == pkt->n_hops)
-		return TRUE;
+		return B_TRUE;
 	*w=0;	// Way has no sense in multistage.
 
 	if (pkt->n_hops==0) // NIC
@@ -1383,14 +1380,14 @@ bool_t check_rr_thintree_static(packet_t * pkt, dim *d, way *w) {
 		*d=((((pkt->to/(long)pow(stDown, network[id].rcoord[STAGE]))+(curr_p%nchan))%stUp)*nchan) + (curr_p%nchan);
 	else // going down static.
 		*d=((((pkt->to/(long)pow(stDown, network[id].rcoord[STAGE]))%stDown)+stUp)*nchan) +(curr_p%nchan);
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Routes in a slimtree.
 *
 * Adaptive routing in slimtrees.
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1403,7 +1400,7 @@ bool_t check_rr_slimtree_adaptive(packet_t * pkt, dim *d, way *w) {
 	long n;
 	// a hop for each routing record value, so we have arrive to our destination:)
 	if (pkt->rr.size == pkt->n_hops)
-		return TRUE;
+		return B_TRUE;
 	*w=0;	// Way has no sense in multistage.
 
 	if (pkt->n_hops==0)	// NIC
@@ -1422,14 +1419,14 @@ bool_t check_rr_slimtree_adaptive(packet_t * pkt, dim *d, way *w) {
 		*d=min_queue_occupation(
 			((pkt->to % stDown) + stUp)*nchan,
 			((pkt->to % stDown) + stUp +1)*nchan);
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
 * Routes in a slimtree.
 *
 * Static routing in slimtrees. Not implemented yet
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired port is returned here.
 * @param w The elected direction (way) is returned here (always UP).
@@ -1439,9 +1436,8 @@ bool_t check_rr_slimtree_adaptive(packet_t * pkt, dim *d, way *w) {
 * @see check_rr
 */
 bool_t check_rr_slimtree_static(packet_t * pkt, dim *d, way *w) {
-	long n;
 	// a hop for each routing record value, so we have arrive to our destination:)
-	panic ("Not implemented yet");
+	abort_sim("Not implemented yet");
 
 /*	if (pkt->rr.size == pkt->n_hops)
 		return TRUE;
@@ -1463,7 +1459,7 @@ bool_t check_rr_slimtree_static(packet_t * pkt, dim *d, way *w) {
 		*d=min_queue_occupation(
 			((pkt->to % stDown) + stUp)*nchan,
 			((pkt->to % stDown) + stUp +1)*nchan);
-*/	return FALSE;
+*/	return B_FALSE;
 }
 
 /**
@@ -1471,7 +1467,7 @@ bool_t check_rr_slimtree_static(packet_t * pkt, dim *d, way *w) {
 *
 * If a packet is the cause of head-of-line blocking at a queue then
 * removes it from the queue's head.
-* 
+*
 * @param i The node in which the extraction will be performed.
 * @param injector The injection queue which extract from.
 */
@@ -1489,22 +1485,22 @@ void extract_packet_icube (long i, port_type injector) {
 * Checks if a request of an output port is required or not. It returns FALSE if the
 * queue is empty, the port is already assigned, or if the packet at the head of the queue
 * has reached its final destination.
-* 
+*
 * @param i The node in which the checking is performed.
 * @param s_p The port we are checking.
 * @return TRUE if the packet can continue in this port, FALSE otherwise.
 */
 bool_t preliminary_check_icube(long i, port_type s_p) {
 	q = &(network[i].p[s_p].q);     // Local queue
-	if (!queue_len(q)) return FALSE;	    // Nothing to be scheduled
+	if (!queue_len(q)) return B_FALSE;	    // Nothing to be scheduled
 	ph = head_queue(q);				// Let us check head of queue...
-	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL)) return FALSE;	// It is NOT a routing record
+	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL)) return B_FALSE;	// It is NOT a routing record
 
 	// At this point, we have something to route
 	if ((d_p = network[i].p[s_p].aop) != P_NULL) {
 		if (network[i].p[d_p].sip != s_p)
 			panic("Output port should be reserved for me");
-		return FALSE; // I've got the port already assigned
+		return B_FALSE; // I've got the port already assigned
 	}
 
 	if (network[i].p[s_p].tor == CLOCK_MAX)
@@ -1515,9 +1511,9 @@ bool_t preliminary_check_icube(long i, port_type s_p) {
 
 	if (check_rr(&pkt_space[ph->packet], &d_d, &d_w)) {
 		network[i].p[p_con].req[s_p] = network[i].p[s_p].tor;
-		return FALSE;
+		return B_FALSE;
 	}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1529,7 +1525,7 @@ bool_t preliminary_check_icube(long i, port_type s_p) {
 * (1) If req_mode == OBLIVIOUS_REQ, meaning that several channels in parallel are being used in a oblivious mode.
 *     Then the bubble restriction is applied to all channels.
 * (2) If (bub_adap) then a bubble is required to INJECT into the adaptive channels.
-* 
+*
 * @param i The node in which we are checking.
 * @param s_p Source port (The packet is currently here).
 * @param d_p Destination port (The room is checked here).
@@ -1540,7 +1536,7 @@ bool_t check_restrictions_icube (long i, port_type s_p, port_type d_p) {
 	long d_np;// Port in the destination node. s_p and d_p are from THIS node.
 	long credit=0; //The number of credits needed to advance. 1 for VCT, bub_x for bubble
 
-	if (d_p == p_con ) return TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
+	if (d_p == p_con ) return B_TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
 	// Let us check VCT restriction
 	d_n = network[i].nbor[d_p/nchan];
 	d_np= (network[i].nborp[d_p/nchan]*nchan)+(d_p%nchan);
@@ -1554,9 +1550,9 @@ bool_t check_restrictions_icube (long i, port_type s_p, port_type d_p) {
 		credit=1;	// To check VCT
 
 	if (queue_space(&(network[d_n].p[d_np].q)) < (pkt_len*credit)) // check restriction (VCT and/or bubble)
-		return FALSE; // Not enough space at destination
+		return B_FALSE; // Not enough space at destination
 
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1567,7 +1563,7 @@ bool_t check_restrictions_icube (long i, port_type s_p, port_type d_p) {
 * Checks a routing record and indicates the direction/way of choice, following
 * the less congested channel, but using minimal paths.
 * It chooses the profitable channel with more credits.
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired dimesion is returned here.
 * @param w The elected direction (way) is returned here.
@@ -1593,41 +1589,43 @@ bool_t check_rr_icube_adaptive(packet_t * pkt, dim *d, way *w) {
 	if (pkt->n_hops==0){ // First jump out of the NIC
 		for (p=0; p<nchan; p++){
 			qs=queue_space(&network[network[id].nbor[0]].p[(network[id].nborp[0]*nchan)+p].q);
-			if (qs>=pkt_len)
+			if (qs>=pkt_len){
 				if (qs>max ){
 					max=qs;
 					nm=1;
 					nbp[0]=p;
 				} else if (qs==max)
 					nbp[nm++]=p;
+            }
 		}
 		if (nm<1)
 			*d = NULL_PORT;
 		else
 			*d = nbp[rand()%nm];
-		return FALSE;
+		return B_FALSE;
 	}
 
 	if (pkt->n_hops==prr.size-1){		// Just a jump to the destination
 		for (p=((pkt->to % nodes_per_switch)*nchan); p<((pkt->to % nodes_per_switch)*nchan)+nchan; p++){
 			qs=queue_space(&network[network[id].nbor[p/nchan]].p[network[id].nborp[p/nchan]+(p%nchan)].q);
-			if (qs>=pkt_len)
+			if (qs>=pkt_len){
 				if (qs>max){
 					max=qs;
 					nm=1;
 					nbp[0]=p;
 				} else if (qs==max)
 					nbp[nm++]=p;
+			}
 		}
 		if (nm<1)
 			*d = NULL_PORT;
 		else
 			*d = nbp[rand()%nm];
-		return FALSE;
+		return B_FALSE;
 	}
 
 	if (prr.size==pkt->n_hops)	// We have arrived to the NIC
-		return TRUE;
+		return B_TRUE;
 
 	for (j=D_X; j<ndim; j++) {
 		if (prr.rr[j] > 0){
@@ -1667,7 +1665,7 @@ bool_t check_rr_icube_adaptive(packet_t * pkt, dim *d, way *w) {
 		*d = nbp[rand()%nm];
 	else
 		*d = NULL_PORT;
-	return FALSE;
+	return B_FALSE;
 }
 
 /**
@@ -1677,7 +1675,7 @@ bool_t check_rr_icube_adaptive(packet_t * pkt, dim *d, way *w) {
 * dimension order routing algorithm. (order: x+ x- y+ y- z+ z-).
 * It also chooses the physichal channel with more credits.
 * Bubble is used to avoid deadlock.
-* 
+*
 * @param pkt The packet to route.
 * @param d The desired dimesion is returned here.
 * @param w The elected direction (way) is returned here.
@@ -1699,14 +1697,14 @@ bool_t check_rr_icube_static(packet_t * pkt, dim *d, way *w) {
 			*d = 0;
 		else
 			*d=NULL_PORT;
-		return FALSE;
+		return B_FALSE;
 	} else if (prr.size==pkt->n_hops)	// We have arrived to the NIC
-		return TRUE;
+		return B_TRUE;
 	else if (pkt->n_hops==prr.size-1){	// Just a jump to the destination
 		*d=pkt->to % nodes_per_switch;
 		if (!check_restrictions_icube (id, curr_p, *d))
 			*d=NULL_PORT;
-		return FALSE;
+		return B_FALSE;
 	}
 
 	for (j=D_X; j<ndim; j++) {
@@ -1714,13 +1712,13 @@ bool_t check_rr_icube_static(packet_t * pkt, dim *d, way *w) {
 			*d = nodes_per_switch+(links_per_direction*2*j)+(pkt->from % links_per_direction);
 			if (!check_restrictions_icube (id, curr_p, *d))
 				*d=NULL_PORT;
-			return FALSE;
+			return B_FALSE;
 		}
 		else if (prr.rr[j] < 0) {
 			*d = nodes_per_switch+(links_per_direction*((2*j)+1))+(pkt->from % links_per_direction);
 			if (!check_restrictions_icube (id, curr_p, *d))
 				*d=NULL_PORT;
-			return FALSE;
+			return B_FALSE;
 		}
 	}
 	panic ("Should not be here in check_rr_icube_adaptive_static");
@@ -1737,9 +1735,6 @@ bool_t check_rr_icube_static(packet_t * pkt, dim *d, way *w) {
 */
 void request_port_icube (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	channel d_c;  // Destination channel
-	dim j;
-	channel l; // coords of port s_p making request
 
 	//		+-> check packet availabilty.
 	//		+-> writes time of request information.
@@ -1766,22 +1761,24 @@ void request_port_icube (long i, port_type s_p) {
 * Checks if a request of an output port is required or not. It returns FALSE if the
 * queue is empty, the port is already assigned, or if the packet at the head of the queue
 * has reached its final destination.
-* 
+*
 * @param i The node in which the checking is performed.
 * @param s_p The port we are checking.
 * @return TRUE if the packet can continue in this port, FALSE otherwise.
 */
 bool_t preliminary_check_icube_IB (long i, port_type s_p) {
 	q = &(network[i].p[s_p].q);     // Local queue
-	if (!queue_len(q)) return FALSE;	    // Nothing to be scheduled
+	if (!queue_len(q))
+        return B_FALSE;	    // Nothing to be scheduled
 	ph = head_queue(q);				// Let us check head of queue...
-	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL)) return FALSE;	// It is NOT a routing record
+	if ((ph->pclass != RR) && (ph->pclass != RR_TAIL))
+        return B_FALSE;	// It is NOT a routing record
 
 	// At this point, we have something to route
 	if ((d_p = network[i].p[s_p].aop) != P_NULL) {
 		if (network[i].p[d_p].sip != s_p)
 			panic("Output port should be reserved for me");
-		return FALSE; // I've got the port already assigned
+		return B_FALSE; // I've got the port already assigned
 	}
 
 	if (network[i].p[s_p].tor == CLOCK_MAX)
@@ -1792,9 +1789,9 @@ bool_t preliminary_check_icube_IB (long i, port_type s_p) {
 
 	if (check_rr(&pkt_space[ph->packet], &d_d, &d_w)) {
 		network[i].p[p_con].req[s_p] = network[i].p[s_p].tor;
-		return FALSE;
+		return B_FALSE;
 	}
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1802,7 +1799,7 @@ bool_t preliminary_check_icube_IB (long i, port_type s_p) {
 *
 * The virtual cut-through restrictions (room for at least one packet in the destination)
 * are always checked.
-* 
+*
 * @param i The node in which we are checking.
 * @param s_p Source port (The packet is currently here).
 * @param d_p Destination port (The room is checked here).
@@ -1813,15 +1810,15 @@ bool_t check_restrictions_icube_IB (long i, port_type s_p, port_type d_p) {
 	long d_np;// Port in the destination node. s_p and d_p are from THIS node.
 //	long credit=0; //The number of credits needed to advance. 1 for VCT, bub_x for bubble
 
-	if (d_p == p_con ) return TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
+	if (d_p == p_con ) return B_TRUE; // Easy: no restriction when consuming. At any rate, should not be testing this...
 	// Let us check VCT restriction
 	d_n = network[i].nbor[d_p/nchan];
 	d_np= (network[i].nborp[d_p/nchan]*nchan)+(d_p%nchan);
 
 	if (queue_space(&(network[d_n].p[d_np].q)) < pkt_len) // check restriction (VCT)
-		return FALSE; // Not enough space at destination
+		return B_FALSE; // Not enough space at destination
 
-	return TRUE;
+	return B_TRUE;
 }
 
 /**
@@ -1852,14 +1849,14 @@ bool_t check_rr_icube_static_IB (packet_t * pkt, dim *d, way *w) {
 			*d = 0;
 		else
 			*d=NULL_PORT;
-		return FALSE;
+		return B_FALSE;
 	} else if (prr.size==pkt->n_hops)	// We have arrived to the NIC
-		return TRUE;
+		return B_TRUE;
 	else if (pkt->n_hops==prr.size-1){	// Just a jump to the destination
 		*d=pkt->to % nodes_per_switch;
 		if (!check_restrictions_icube_IB (id, curr_p, *d))
 			*d=NULL_PORT;
-		return FALSE;
+		return B_FALSE;
 	}
 
 	for (j=D_X; j<ndim; j++) {
@@ -1867,18 +1864,17 @@ bool_t check_rr_icube_static_IB (packet_t * pkt, dim *d, way *w) {
 			*d = nodes_per_switch+(links_per_direction*2*j)+(prr.rr[ndim]);
 			if (!check_restrictions_icube_IB (id, curr_p, *d))
 				*d=NULL_PORT;
-			return FALSE;
+			return B_FALSE;
 		}
 		else if (prr.rr[j] < 0) {
 			*d = nodes_per_switch+(links_per_direction*((2*j)+1))+(prr.rr[ndim]);
 			if (!check_restrictions_icube_IB (id, curr_p, *d))
 				*d=NULL_PORT;
-			return FALSE;
+			return B_FALSE;
 		}
 	}
 	panic ("Should not be here in check_rr_icube_adaptive_static");
 }
-
 
 /**
 * Requests an output port in an indirect cube (for IB-based simul.)
@@ -1891,9 +1887,6 @@ bool_t check_rr_icube_static_IB (packet_t * pkt, dim *d, way *w) {
 */
 void request_port_icube_IB (long i, port_type s_p) {
 	// Let us work with port "s_p" at node "i"
-	channel d_c;  // Destination channel
-	dim j;
-	channel l; // coords of port s_p making request
 
 	//		+-> check packet availabilty.
 	//		+-> writes time of request information.
@@ -1913,3 +1906,4 @@ void request_port_icube_IB (long i, port_type s_p) {
 	else
 		network[i].p[d_p].req[s_p] = network[i].p[s_p].tor;
 }
+

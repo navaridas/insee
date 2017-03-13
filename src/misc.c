@@ -18,28 +18,55 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#include <stdio.h>
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
 #include "misc.h"
+#include "globals.h"
+
+extern time_t start_time, end_time;
 
 /**
-* Stops the simulation & prints an error message.
-*
-* When the simulation ends here the return code is -1.
-* 
-* @param msg A string containing the error message 
+* Aborts the simulation cleanly & prints an error message.
+* @param msg A string containing the error message
 */
-void panic(char * msg) {
-	fprintf(stderr, "panic: %s !!!\n", msg);
-#ifdef WIN32    
-	system("PAUSE");
-#endif /* WIN32 */
-	exit(-1);
+void abort_sim(char * msg) {
+    fprintf(stderr, "******************************************************************************************************\n");
+	fprintf(stderr, "* ABORTING: %-88s *\n", msg);
+    fprintf(stderr, "******************************************************************************************************\n");
+
+    aborted=B_TRUE;
 }
 
 /**
+* Aborts the simulation & prints an error message.
+* Should only be used when an insolvable error is encountered, otherwise should use abort (), which completes the whole execution rather than killing the program.
+*
+* When the simulation ends here the return code is -1.
+*
+* @param msg A string containing the error message
+*/
+void panic(char * msg) {
+    fprintf(stderr, "******************************************************************************************************\n");
+	fprintf(stderr, "* PANIC: %-91s *\n", msg);
+	fprintf(stderr, "******************************************************************************************************\n");
+#ifdef WIN32
+	system("PAUSE");
+#endif /* WIN32 */
+    aborted=B_TRUE;
+	time(&end_time);
+	print_results(start_time, end_time);
+	exit(-1);
+}
+
+
+/**
 * Allocates memory.
-* 
+*
 * @param size The size in bytes of the memory allocation.
 */
 void * alloc(long size) {
@@ -48,3 +75,4 @@ void * alloc(long size) {
 		panic("alloc: Unable to allocate memory");
 	return res;
 }
+

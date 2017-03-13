@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /**
 * Collects queue occupancy histogram stats.
-* 
+*
 * @param i The node to collect from.
 */
 void stats(long i) {
@@ -137,10 +137,7 @@ void reset_stats(void) {
 * Print partial results.
 */
 void results_partial(void) {
-	CLOCK_TYPE copyclock;
-
-	copyclock = sim_clock - last_reset_time;
-
 	if (pheaders > 0)
 		print_partials();
 }
+

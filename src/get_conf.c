@@ -29,14 +29,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #ifdef WIN32
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
-#include "misc.h"
 #include "globals.h"
 #include "literal.h"
+#include "misc.h"
 
 /** The Configuration file. */
+//#ifndef DEFAULT_CONF_FILE
 #define DEFAULT_CONF_FILE "fsin.conf"
+//#endif // DEFAULT_CONF_FILE
 
 double bg_load;
 
@@ -117,6 +121,11 @@ static literal_t options_l[] = {
 	{ 58, "trigger_rate"},
 	{ 59, "triggered"},
 	{ 60, "faults"},
+	{ 61, "bandwidth"},
+	{ 61, "link_bandwidth"},
+	{ 61, "bw"},
+	{ 62, "trace_cpu_units"},
+	{ 62, "cpu_units"},
 	{ 100, "fsin_cycle_relation"},
 	{ 101, "simics_cycle_relation"},
 	{ 103, "serv_addr"},
@@ -153,6 +162,22 @@ literal_t pattern_l[] = {
 };
 
 /**
+* All the possible time units for cpu events in the traces.
+* @see literal.c
+*/
+literal_t cpu_units_l[] = {
+    { UNIT_MILLISECONDS,	"ms"},
+    { UNIT_MILLISECONDS,	"milliseconds"},
+    { UNIT_MICROSECONDS,	"us"},
+    { UNIT_MICROSECONDS,	"microseconds"},
+    { UNIT_NANOSECONDS, 	"ns"},
+    { UNIT_NANOSECONDS, 	"nanoseconds"},
+    { UNIT_CYCLES,      	"cycle"},
+    { UNIT_CYCLES,      	"cycles"},
+	LITERAL_END
+};
+
+/**
 * All the topologies allowed are specified here.
 * @see literal.c
 */
@@ -162,6 +187,8 @@ literal_t topology_l[] = {
 	{ CIRC_PK,	"circpk"},
 	{ TWISTED,	"ttorus"},
 	{ TORUS,	"torus"},
+    { SPINNAKER,"spin"},
+    { SPINNAKER,"spinnaker"},
 	{ MESH,		"mesh"},
 	{ FATTREE,	"fattree"},
 	{ FATTREE,	"fat"},
@@ -329,7 +356,9 @@ void get_conf(long argn, char ** args) {
 * @param option The string which contains an option=value
 */
 void get_option(char * option) {
-	long opt;
+	int opt;
+	long aux;
+
 	char * name;
 	char * value;
 	char * param;
@@ -337,7 +366,7 @@ void get_option(char * option) {
 	char message[100];
 
 	name = strtok(option, "=");
-	if(!literal_value(options_l, name, &opt)) {
+	if(!literal_value(options_l, name, (int*) &opt)) {
 		sprintf(message, "get_option: Unknown option %s", name);
 		panic(message);
 	}
@@ -352,10 +381,10 @@ void get_option(char * option) {
 			pkt_len = atoi(param);
 		param = strtok(NULL, sep);
 		if (param)
-			phit_size = atoi(param);
+			phit_len = atoi(param);
 		break;
 	case 4:
-		if(!literal_value(pattern_l, value, (long *) &pattern))
+		if(!literal_value(pattern_l, value, (int*) &pattern))
 			panic("get_conf: Unknown traffic pattern");
 		break;
 	case 5:
@@ -363,7 +392,7 @@ void get_option(char * option) {
 		break;
 	case 6:
 		param = strtok(value, sep);
-		if(!literal_value(topology_l, param, (long *) &topo))
+		if(!literal_value(topology_l, param, (int*)&topo))
 			panic("get_conf: Unknown topology");
 		if(topo<DIRECT){
 			param = strtok(NULL, sep);
@@ -434,15 +463,15 @@ void get_option(char * option) {
 		panic("The Correct Syntax is now \"topo=<direct_topology>_<nodes_x>_<nodes_y>_<nodes_z>\" ");
 		break;
 	case 10:
-		if(!literal_value(vc_l, value, (long *) &vc_management))
+		if(!literal_value(vc_l, value, (int*) &vc_management))
 			panic("get_conf: Unknown vc management");
 		break;
 	case 11:
-		if(!literal_value(routing_l, value, (long *) &routing))
+		if(!literal_value(routing_l, value, (int*) &routing))
 			panic("get_conf: Unknown routing");
 		break;
 	case 12:
-		if(!literal_value(rmode_l, value, (long *) &req_mode))
+		if(!literal_value(rmode_l, value, (int*) &req_mode))
 			panic("get_conf: Unknown request mode");
 		break;
 	case 13:
@@ -458,11 +487,11 @@ void get_option(char * option) {
 			bub_z = atoi(param);
 		break;
 	case 14:
-		if(!literal_value(atype_l, value, (long *) &arb_mode))
+		if(!literal_value(atype_l, value, (int*) &arb_mode))
 			panic("get_conf: Unknown arbitration mode");
 		break;
 	case 15:
-		if(!literal_value(ctype_l, value, (long *) &cons_mode))
+		if(!literal_value(ctype_l, value, (int*) &cons_mode))
 			panic("get_conf: Unknown consumption mode");
 		break;
 	case 16:
@@ -488,13 +517,13 @@ void get_option(char * option) {
 		sscanf(value, "%ld", &binj_cap);
 		break;
 	case 22:
-		sscanf(value, "%s", &file);
+		sscanf(value, "%s", file);
 		break;
 	case 23:
-		sscanf(value, "%s", &trcfile);
+		sscanf(value, "%s", trcfile);
 		break;
 	case 24:
-		sscanf(value, "%" SCAN_CLOCK, &pinterval);
+		sscanf(value, "%"SCAN_CLOCK, &pinterval);
 		break;
 	case 25:
 		sscanf(value, "%ld", &nways);
@@ -512,41 +541,51 @@ void get_option(char * option) {
 		sscanf(value, "%" SCAN_CLOCK, &timeout_lower_limit);
 		break;
 	case 30:
-		sscanf(value, "%ld", &extract);
+		sscanf(value, "%ld", &aux);
+		if (aux)
+			extract = B_TRUE;
+        else
+            extract = B_FALSE;
 		break;
 	case 31:
 		sscanf(value, "%ld", &monitored);
 		break;
 	case 32:
-		if(!literal_value(injmode_l, value, (long *) &inj_mode))
+		if(!literal_value(injmode_l, value, (int*) &inj_mode))
 			panic("get_conf: Unknown injection mode");
 		break;
 	case 33:
 		sscanf(value, "%lf", &intransit_pr);
 		break;
 	case 34:
-		sscanf(value, "%d", &drop_packets);
-		if (drop_packets)
-			drop_packets = TRUE;
+		sscanf(value, "%ld", &aux);
+		if (aux)
+			drop_packets = B_TRUE;
+        else
+            drop_packets = B_FALSE;
 		break;
 	case 35:
 		sscanf(value, "%ld", &bub_adap[1]);
 		break;
 	case 36:
-		sscanf(value, "%d", &parallel_injection);
-		if (parallel_injection)
-			parallel_injection = TRUE;
+		sscanf(value, "%ld", &aux);
+		if (aux)
+			parallel_injection = B_TRUE;
+        else
+            parallel_injection = B_FALSE;
 		break;
 	case 37:
-		sscanf(value, "%d", &shotmode);
-		if (shotmode)
-			shotmode = TRUE;
+		sscanf(value, "%ld", &aux);
+		if (aux)
+			shotmode = B_TRUE;
+        else
+            shotmode = B_FALSE;
 		break;
 	case 38:
 		sscanf(value, "%ld", &shotsize);
 		break;
 	case 39:
-		sscanf(value, "%" SCAN_CLOCK, &update_period);
+		sscanf(value, "%"SCAN_CLOCK, &update_period);
 		break;
 	case 40:
 		sscanf(value, "%lf", &global_cc);
@@ -570,29 +609,29 @@ void get_option(char * option) {
 		sscanf(value, "%ld", &sk_zy);
 		break;
 	case 47:
-		sscanf(value, "%" SCAN_CLOCK, &warm_up_period);
+		sscanf(value, "%"SCAN_CLOCK, &warm_up_period);
 		break;
 	case 48:
-		sscanf(value, "%" SCAN_CLOCK, &conv_period);
+		sscanf(value, "%"SCAN_CLOCK, &conv_period);
 		break;
 	case 49:
 		sscanf(value, "%lf", &threshold);
 		break;
 	case 50:
-		sscanf(value, "%" SCAN_CLOCK, &max_conv_time);
+		sscanf(value, "%"SCAN_CLOCK, &max_conv_time);
 		break;
 	case 51:
-		sscanf(value, "%d", &samples);
+		sscanf(value, "%ld", &samples);
 		break;
 	case 52:
-		sscanf(value, "%" SCAN_CLOCK, &batch_time);
+		sscanf(value, "%"SCAN_CLOCK, &batch_time);
 		break;
 	case 53:
-		sscanf(value, "%d", &min_batch_size);
+		sscanf(value, "%ld", &min_batch_size);
 		break;
 	case 54:
 		param = strtok(value, sep);
-		if(!literal_value(placement_l, param, (long *) &placement))
+		if(!literal_value(placement_l, param, (int*) &placement))
 			panic("get_conf: Unknown placement mode");
 		if (placement==SHIFT_PLACE){
 			param = strtok(NULL, sep);
@@ -638,7 +677,7 @@ void get_option(char * option) {
 		break;
 	case 55:
 #if (BIMODAL_SUPPORT != 0)
-		sscanf(value, "%d", &msglength);
+		sscanf(value, "%ld", &msglength);
 #endif /* BIMODAL */
 		break;
 	case 56:
@@ -665,7 +704,14 @@ void get_option(char * option) {
 		}
 		break;
 	case 60:
-		sscanf(value, "%d", &faults);
+		sscanf(value, "%ld", &faults);
+		break;
+    case 61:
+		sscanf(value, "%ld", &link_bw);
+		break;
+    case 62:
+		if(!literal_value(cpu_units_l, value, (int*) &cpu_units))
+			panic("get_conf: Unknown CPU event unit");
 		break;
 #if (EXECUTION_DRIVEN != 0)
 	case 100:
@@ -701,7 +747,7 @@ void get_option(char * option) {
 void verify_conf(void) {
 	char mon[128];
 
-	if(pkt_len < 1 || phit_size < 1)
+	if(pkt_len < 1 || phit_len < 1)
 		panic("verify_conf: Illegal packet length");
 	if( !(bub_adap[1]<buffer_cap && bub_x<buffer_cap && bub_y<buffer_cap && bub_z<buffer_cap))
 		panic("Illegal bubble size");
@@ -718,34 +764,34 @@ void verify_conf(void) {
 		}
 		a = nodes_x;
 		k = nodes_y;
-		
+
 		if (gcd(a,k)!=1)
 			panic("Greatest common divisor of a and k is not 1");
 		k_inv = inverse(k, a);
-		
+
 		s1 = 1;
 		s2 = 2*k*a-1;
-		
+
 		nodes_x=2*a*a;
 		nodes_y=1;	// to calculate correctly y#the total number of nodes
 	}
-	
+
 	if (topo == CIRCULANT){
 		if (ndim!=2 ){
 			panic("WARNING: only 2D circulant graphs implemented so far!!!\n");
 		}
 		step=nodes_y;	// the distance to the second dimension of adjacency
 		nodes_y=1;	// to calculate correctly y#the total number of nodes
-	
+
 		twist=nodes_x%step;
 		rows= nodes_x/step;
-		
+
 		if (twist>step/2) {
 			twist=twist-step;
-			rows=rows++;
+			rows=rows+1;
 		}
 	}
-	
+
 	if (topo > CUBE && nways!=1){
 		printf("WARNING: nways has no sense in indirect topologies !!!\n");
 		nways=1;
@@ -753,13 +799,13 @@ void verify_conf(void) {
 
 	if ((req_mode == DOUBLE_OBLIVIOUS_REQ && (nchan % ndim))) {
 		printf("WARNING: Bubble double oblivious only for a number of VC multiple of ndim\n");
-		printf("         Setting nchan to %d\n", ndim);
+		printf("         Setting nchan to %ld\n", ndim);
 		nchan = ndim;
 	}
 
 	if ((req_mode == DOUBLE_ADAPTIVE_REQ && (nchan % ndim))) {
 		printf("WARNING: CURRENTLY double adaptive only for a number of VC multiple of ndim\n");
-		printf("         Setting nchan to %d\n", ndim);
+		printf("         Setting nchan to %ld\n", ndim);
 		nchan = ndim;
 	}
 
@@ -929,10 +975,10 @@ void verify_conf(void) {
 	if (pattern == HOTREGION && nprocs < 8)
 		panic("Hotregion traffic pattern require more than 8 nodes");
 	if (pattern == TRACE){
-		drop_packets=FALSE;	// If some packet are dropped the simulation will never end.
+		drop_packets=B_FALSE;	// If some packet are dropped the simulation will never end.
 		extract=0;		// Same as previous.
 		samples=1;		// For final summary
-		shotmode=FALSE;
+		shotmode=B_FALSE;
 		load=bg_load;   // generation rate of the background traffic.
 		if (trcfile==NULL)
 			panic("Trace file not defined");
@@ -952,13 +998,14 @@ void verify_conf(void) {
 		if (trace_instances==0)
 			trace_instances=1;
 
-		if (placement==QUADRANT_PLACE)
+		if (placement==QUADRANT_PLACE){
 			if (topo<DIRECT){
 				trace_instances=(long)pow(2, ndim);
-				printf("WARNING: quadrant placement with a %d-D topology trace_instances is now %d\n",ndim, trace_instances);
+				printf("WARNING: quadrant placement with a %ld-D topology trace_instances is now %ld\n",ndim, trace_instances);
 			}
 			else
 				panic("quadrant placement only for k-ary n-cube topologies");
+		}
 		if (placement==DIAGONAL_PLACE)
 			if (ndim!=2 || trace_instances!=1 || topo>DIRECT)
 				panic("diagonal placement only for 2d cube topologies and 1 instance");
@@ -1039,17 +1086,16 @@ void verify_conf(void) {
 
 	if (strcmp(file, "")==0){
 #ifdef WIN32
-		sprintf(file, "fsin.out" , GetCurrentProcessId() );
+		sprintf(file, "fsin.%ld.out" , GetCurrentProcessId() );
 #else
-#include <unistd.h>
-		sprintf(file, "fsin.%ld.out", getpid());
+		sprintf(file, "fsin.%ld.out", (long)getpid());
 #endif
 	   printf("WARNING: Output files undefined! using %s for default\n", file);
 	}
 
 #if (EXECUTION_DRIVEN != 0)
 	num_executions = 0;
-	sprintf(mon, "%s.%d.mon", file, num_executions);
+	sprintf(mon, "%s.%ld.mon", file, num_executions);
 #else
 	sprintf(mon, "%s.mon", file);
 #endif
@@ -1084,12 +1130,12 @@ void set_default_conf (void) {
 	r_seed = 17;
 
 	pkt_len = 16;
-	phit_size = 4;
+	phit_len = 4;
 	pattern = UNIFORM;
-	load = 1.0;
+	load = 0.05;
 	bg_load = 0.0;
-	drop_packets = FALSE;
-	extract = FALSE;
+	drop_packets = B_FALSE;
+	extract = B_FALSE;
 
 	topo = TORUS;
 
@@ -1098,10 +1144,10 @@ void set_default_conf (void) {
 	nodes_z = 1;
 
 	nways = 2;
-	nchan = 1;
+	nchan = 2;
 	ninj = 1;
 	buffer_cap = 4;
-	binj_cap = 8;
+	binj_cap = 4;
 	tr_ql = buffer_cap * pkt_len + 1;
 	inj_ql = binj_cap * pkt_len + 1;
 
@@ -1109,13 +1155,13 @@ void set_default_conf (void) {
 
 	vc_management = BUBBLE_MANAGEMENT;
 	routing = DIMENSION_ORDER_ROUTING;
-	req_mode = BUBBLE_OBLIVIOUS_REQ;
+	req_mode = BUBBLE_ADAPTIVE_SMART_REQ;
 	bub_x = bub_y = bub_z = 2;
 	arb_mode = ROUNDROBIN_ARB;
 	intransit_pr = 0.0;
 	cons_mode = MULTIPLE_CONS;
 	inj_mode = SHORTEST_INJ;
-	parallel_injection = TRUE;
+	parallel_injection = B_TRUE;
 	plevel = 0;
 	pinterval = (CLOCK_TYPE) 1000L;
 	pheaders = 2047;
@@ -1123,7 +1169,7 @@ void set_default_conf (void) {
 	monitored = 1;
 	bub_adap[0] = 0;
 	bub_adap[1] = 0;
-	shotmode = FALSE;
+	shotmode = B_FALSE;
 	shotsize = 1;
 	global_cc = 100.0;
 	update_period = (CLOCK_TYPE) 0L;
@@ -1133,16 +1179,17 @@ void set_default_conf (void) {
 	lm_percent=0.1;
 #endif /* BIMODAL */
 
-	warm_up_period= (CLOCK_TYPE) 25000L;
+	warm_up_period= (CLOCK_TYPE) 5000L;
 
 	conv_period= (CLOCK_TYPE) 1000L;
 	threshold=0.05;
 	max_conv_time= (CLOCK_TYPE) 25000L;
 	trace_nodes=0;
 	trace_instances=0;
-
-	samples=25;
-	batch_time=(CLOCK_TYPE) 2000L;
+    cpu_units=UNIT_NANOSECONDS;
+    link_bw=10000; // 10 Gbps
+	samples=10;
+	batch_time=(CLOCK_TYPE) 1000L;
 	min_batch_size=0;
 
 	timeout_upper_limit= (CLOCK_TYPE) -1L;
@@ -1153,11 +1200,12 @@ void set_default_conf (void) {
 	nstages=0;
 	placement=CONSECUTIVE_PLACE;
 	shift=0;
-	trace_instances=1;
-	trace_nodes=0;
 
 	faults=0;
+	trcfile=malloc(32*sizeof(char));
 	sprintf(trcfile,"/dev/null");
+
+    file=malloc(128*sizeof(char));
 
 	trigger_rate=0.0;
 	trigger_max=1;
@@ -1170,3 +1218,4 @@ void set_default_conf (void) {
 	num_periodos_espera = 0;
 #endif
 }
+

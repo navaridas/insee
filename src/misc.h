@@ -10,15 +10,15 @@
 #ifndef _misc
 #define _misc
 
-#include <errno.h>
+//#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
 #include "constants.h"
 
 /**
 * Choose a random number in [ 0, m ).
-* 
+*
 * @param m maximum.
 * @return A random number.
 */
@@ -26,7 +26,7 @@
 
 /**
 * Return the absolute value
-* 
+*
 * @param m The number.
 * @return The absolute value of m.
 */
@@ -43,7 +43,7 @@
 
 /**
 * Definition of the maximum chooser
-* 
+*
 * @param a One number.
 * @param b Another One.
 * @return The maximum of both.
@@ -54,7 +54,7 @@
 
 /**
 * Definition of the minimum chooser
-* 
+*
 * @param a One number.
 * @param b Another One.
 * @return The minimum of both.
@@ -65,7 +65,7 @@
 
 /**
 * Definition of the module of a division
-* 
+*
 * @param a One number.
 * @param b Another One.
 * @return a mod b.
@@ -78,17 +78,26 @@
 * Definition of boolean values.
 */
 typedef enum bool_t {
-	FALSE = 0, TRUE = 1
+	B_FALSE = 0, B_TRUE = 1
 } bool_t;
+
+/**
+* Definition of trace cpu events units.
+*/
+typedef enum cpu_units_t {
+	UNIT_MILLISECONDS=0, UNIT_MICROSECONDS=1, UNIT_NANOSECONDS=2, UNIT_CYCLES=3
+} cpu_units_t;
 
 /**
 * Definition of all accepted topologies.
 */
 typedef enum topo_t {
 	// Original fsin topologies
-	TORUS, MESH, 
+	TORUS, MESH,
 	// Proposed/evaluated direct topologies
-	MIDIMEW, TWISTED, CIRCULANT, CIRC_PK, 
+	MIDIMEW, TWISTED, CIRCULANT, CIRC_PK,
+	// SpiNNaker topology
+	SPINNAKER,
 	// Embraces all direct topologies
 	DIRECT,
 	// Other cube-based topologies
@@ -159,7 +168,7 @@ typedef enum routing_t {
 typedef enum req_mode_t {
 	// Variants for BUBBLE
 ONE_OR_MORE_REQUIRED,
-	BUBBLE_OBLIVIOUS_REQ, DOUBLE_OBLIVIOUS_REQ, TREE_REQ, ICUBE_REQ, 
+	BUBBLE_OBLIVIOUS_REQ, DOUBLE_OBLIVIOUS_REQ, TREE_REQ, ICUBE_REQ,
 TWO_OR_MORE_REQUIRED,
 	BUBBLE_ADAPTIVE_RANDOM_REQ, BUBBLE_ADAPTIVE_SHORTEST_REQ, BUBBLE_ADAPTIVE_SMART_REQ, DOUBLE_ADAPTIVE_REQ, BIMODAL_REQ,
 	// Variants for DALLY
@@ -203,7 +212,9 @@ typedef enum source_t{
 
 // Some declarations.
 void * alloc(long);
+void abort_sim(char *mes);
 void panic(char *mes);
 
 #endif /* _misc */
+
 

@@ -52,3 +52,4 @@ typedef struct batch_t {
 	long max_inj_delay;			///< Maximum delay.
 } batch_t;
 #endif
+

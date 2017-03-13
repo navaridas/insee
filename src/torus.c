@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 * Given a node address "ad", a direction "wd" (X,Y or Z) and a way "ww" (UP or DOWN)
 * returns the address of the neighbor in that direction and way; only valid for torus
 * but usable also for mesh.
-* 
+*
 * @param ad A node address.
 * @param wd A dimension (X,Y or Z).
 * @param ww A way (UP or DOWN).
@@ -78,7 +78,7 @@ long torus_neighbor (long ad, dim wd, way ww) {
 
 /**
 * Generates the routing record for a mesh.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
@@ -101,7 +101,7 @@ routing_r mesh_rr (long source, long destination) {
 	dz=network[destination].rcoord[D_Z];
 
 	res.rr[D_X] = dx-sx;
-	res.size = abs(res.rr[D_Z]);
+	res.size = abs(res.rr[D_X]);
 
 	if (ndim >= 2){
 		res.rr[D_Y] = dy-sy;
@@ -118,7 +118,7 @@ routing_r mesh_rr (long source, long destination) {
 
 /**
 * Generates the routing record for a torus.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
@@ -178,7 +178,7 @@ routing_r torus_rr (long source, long destination) {
 
 /**
 * Generates the routing record for an unidirectional torus.
-* 
+*
 * @param source The source node of the packet.
 * @param destination The destination node of the packet.
 * @return The routing record needed to go from source to destination.
@@ -220,3 +220,4 @@ routing_r torus_rr_unidir (long source, long destination) {
 	}
 	return res;
 }
+

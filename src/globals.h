@@ -21,22 +21,24 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #ifndef _globals
 #define _globals
 
-#include <math.h>
-#include <time.h>
-#include <limits.h>
+#include <stdlib.h>
 
-#include "packet.h"
+#include "misc.h"
 #include "constants.h"
 #include "literal.h"
-#include "misc.h"
 #include "phit.h"
+#include "packet.h"
 #include "queue.h"
 #include "event.h"
 #include "router.h"
 #include "pkt_mem.h"
 #include "batch.h"
 
-#ifndef _main
+#include <math.h>
+#include <time.h>
+#include <limits.h>
+
+#define packet_size_in_phits pkt_len
 
 extern long radix;
 extern long ndim;
@@ -51,7 +53,7 @@ extern long r_seed;
 extern long nodes_x, nodes_y, nodes_z;
 extern long binj_cap;
 extern long ninj;
-extern router * network;
+extern router  * network;
 extern long **destinations;
 extern long **sources;
 extern long * con_dst;
@@ -95,7 +97,7 @@ extern long plevel;
 extern long pheaders;
 extern long bheaders;
 extern CLOCK_TYPE pinterval;
-extern long extract;
+extern bool_t extract;;
 extern long monitored;
 extern double intransit_pr;
 
@@ -117,11 +119,13 @@ extern void (*arbitrate)(long i, port_type d_p);
 
 extern double load, trigger_rate ;
 extern long aload, lm_load, trigger;
+extern long link_bw;
 extern long trigger_max, trigger_min, trigger_dif;
 extern double global_q_u, global_q_u_current;
 extern vc_management_t vc_management;
 extern routing_t routing;
 extern traffic_pattern_t pattern;
+extern cpu_units_t cpu_units;
 extern cons_mode_t cons_mode;
 extern arb_mode_t arb_mode;
 extern req_mode_t req_mode;
@@ -162,7 +166,7 @@ extern double acum_hops;
 extern long nodes_per_switch;
 extern long links_per_direction;
 
-extern long pkt_len, phit_size, buffer_cap, tr_ql, inj_ql;
+extern long pkt_len, phit_len, buffer_cap, tr_ql, inj_ql;
 
 extern dim * port_coord_dim;
 extern way * port_coord_way;
@@ -171,14 +175,17 @@ extern channel * port_coord_channel;
 extern packet_t * pkt_space;
 extern long pkt_max;
 
-extern char trcfile[128];
+extern char *trcfile;
 
 extern bool_t go_on;
+extern bool_t interrupted;
+extern bool_t aborted;
+
 extern long reseted;
 extern double threshold;
 
 extern FILE *fp;
-extern char file[128];
+extern char *file;
 
 extern port_type last_port_arb_con;
 
@@ -187,7 +194,7 @@ extern void (* run_network)(void);
 void run_network_shotmode(void);
 void run_network_batch(void);
 
-#endif // _main
+void report_receiving_tasks(void);
 
 /* In data_generation.c */
 void init_injection (void);
@@ -272,6 +279,7 @@ extern port_type p_con;
 extern port_type p_drop;
 extern port_type p_inj_first, p_inj_last;
 
+void init_ports(long i);
 void router_init(void);
 void init_network(void);
 void coords (long ad, long *cx, long *cy, long *cz);
@@ -281,7 +289,9 @@ long torus_neighbor(long ad, dim wd, way ww);
 long midimew_neighbor(long ad, dim wd, way ww);
 long dtt_neighbor(long ad, dim wd, way ww);
 long circulant_neighbor(long ad, dim wd, way ww);
-long circ_pk_neighbor(long ad, dim wd, way ww); 
+long circ_pk_neighbor(long ad, dim wd, way ww);
+long spinnaker_neighbor(long ad, dim wd, way ww);
+
 
 routing_r torus_rr (long source, long destination);
 routing_r torus_rr_unidir (long source, long destination);
@@ -297,6 +307,7 @@ routing_r icube_1mesh_rr (long source, long destination);
 routing_r fattree_rr_adapt (long source, long destination);
 routing_r thintree_rr_adapt (long source, long destination);
 routing_r slimtree_rr_adapt (long source, long destination);
+routing_r spinnaker_rr(long source, long destination);
 
 void create_fattree();
 void create_slimtree();
@@ -310,6 +321,7 @@ extern literal_t rmode_l[];
 extern literal_t atype_l[];
 extern literal_t ctype_l[];
 extern literal_t pattern_l[];
+extern literal_t cpu_units_l[];
 extern literal_t topology_l[];
 extern literal_t injmode_l[];
 extern literal_t placement_l[];
@@ -354,11 +366,12 @@ unsigned long get_pkt();
  /* In trace.c */
  void read_trace();
  void run_network_trc();
- 
+
 /* In event.c */
  void init_event (event_q *q);
  void ins_event (event_q *q, event i);
  void do_event (event_q *q, event *i);
+ void do_event_n_times (event_q *q, event *i, CLOCK_TYPE increment);
  event head_event (event_q *q);
  void rem_head_event (event_q *q);
  bool_t event_empty (event_q *q);
@@ -376,7 +389,6 @@ unsigned long get_pkt();
  bool_t occurred (event_l *l, event i);
 #endif /* TRACE single list */
 
-#define packet_size_in_phits pkt_len
 #if (EXECUTION_DRIVEN != 0)
   extern long fsin_cycle_relation;
   extern long simics_cycle_relation;
@@ -388,3 +400,4 @@ unsigned long get_pkt();
 #endif
 
 #endif /* _globals */
+

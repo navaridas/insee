@@ -27,3 +27,4 @@ typedef struct phit {
 	unsigned long packet;	///< The id of the packet. @see pkt_mem.c
 } phit;
 #endif /* _phit */
+

@@ -1,10 +1,10 @@
 /**
 * @file
 * @brief	Tools for trace guided simulation.
-* 
-* In this file are the functions for reading trace files 
+*
+* In this file are the functions for reading trace files
 * & the trace guided simulation running module.
-* This file is only used when compiling with TRACE_SUPPORT != 0 
+* This file is only used when compiling with TRACE_SUPPORT != 0
 *
 *@author Javier Navaridas
 
@@ -37,7 +37,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #define cpuspeed  1e6		///< The cpu speed in Mhz.
 #define BUFSIZE 131072		///< The size of the buffer,
 
-#define CPU_SCALE 32000
+#define CPU_SCALE 2
 
 void read_dimemas();
 void read_fsin_trc();
@@ -59,11 +59,11 @@ long **translation;	///< A matrix containing the simulation nodes for each trace
 /**
 * The trace reader dispatcher selects the format type and calls to the correct trace read.
 *
-* The selection reads the first character in the file. This could be: '#' for dimemas, 
+* The selection reads the first character in the file. This could be: '#' for dimemas,
 * 'c', 's' or 'r' for fsin trc, and '-' for alog (in complete trace the header is "-1",
 * or in filtered trace could be "-101" / "-102"). This is a very naive decision, so we
 * probably have to change this, but for the moment it works.
-* 
+*
 *@see read_dimemas
 *@see read_fsin_trc
 *@see read_alog
@@ -112,7 +112,7 @@ void read_trace(){
 		default:
 			panic("Undefined placement strategy");
 			break;
-	} 
+	}
 
 	if((ftrc = fopen(trcfile, "r")) == NULL){
 		printf("%s\n",trcfile);
@@ -152,7 +152,6 @@ void read_trace(){
 void read_dimemas() {
 	FILE * ftrc;
 	char buffer[BUFSIZE];
-	char * tok;
 	long i, n, inst;	///< The number of nodes is read here.
 	char sep[]=":";		///< Dimemas record separator.
 	char tsep[]="(),";	///< Separators to get the task info.
@@ -165,7 +164,7 @@ void read_dimemas() {
 	long comm_id;		///< The communicator id.
 
 	double cpu_burst;	///< CPU time(in seconds).
-	long size;			///< Message size(in bytes). 
+	long size;			///< Message size(in bytes).
 	long tag;			///< Tag of the MPI operation.
 	long comm;			///< Communicator id.
 
@@ -178,7 +177,9 @@ void read_dimemas() {
 	if((ftrc = fopen(trcfile, "r")) == NULL)
 		panic("Trace file not found in current directory");
 
-	fgets(buffer,BUFSIZE,ftrc);
+	if (fgets(buffer,BUFSIZE,ftrc)==NULL)
+		panic("Trace cannot be read");
+
 	if (strncmp("#DIMEMAS", buffer, 8))
 		/// Could try to open traces in ALOG or FSIN trc format instead of panic....
 		panic("Header line is missing, maybe not a dimemas file");
@@ -195,7 +196,7 @@ void read_dimemas() {
 		if (!strcmp(op_id,"s")) // Offset
 			// As we parse the whole file, it is not important for us.
 			continue;
-		
+
 		if (!strcmp(op_id,"d")){ // Definitions.
 			type=atol(strtok( NULL, sep));
 			switch (type){
@@ -215,7 +216,7 @@ void read_dimemas() {
 			continue;
 		}
 		task_id=atol(strtok( NULL, sep)); //We have the task id.
-		if ( task_id>n || task_id <0 ) 
+		if ( task_id>n || task_id <0 )
 			panic ("Task id not defined: Aborting");
 		th_id=atol(strtok( NULL, sep)); //We have the thread id.
 		switch (atol(op_id)){
@@ -223,16 +224,18 @@ void read_dimemas() {
 			cpu_burst=atof(strtok( NULL, sep)); //We have the time taken by the CPU.
 			ev.type=COMPUTATION;
 			ev.length=(long)ceil((cpu_burst*cpuspeed)/op_per_cycle); // Computation time.
-			ev.count=0;	// Elapsed time.
-			if (task_id<trace_nodes && task_id>=0)
-				for (inst=0; inst<trace_instances; inst++){
-					ev.pid=translation[task_id][inst];
-					ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
-				}
-			else
-				panic("Adding cpu event into a non defined CPU");
-			break; 
-        
+			if (ev.length>0){
+                ev.count=0;	// Elapsed time.
+                if (task_id<trace_nodes && task_id>=0)
+                    for (inst=0; inst<trace_instances; inst++){
+                        ev.pid=translation[task_id][inst];
+                        ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
+                    }
+                else
+                    panic("Adding cpu event into a non defined CPU");
+			}
+			break;
+
 		case SEND:
 			t_id=atol(strtok( NULL, sep)); //We have the destination task id.
 			if ( t_id>nprocs || t_id <0 )
@@ -253,7 +256,7 @@ void read_dimemas() {
 					ev.count=0; // Packets sent or received
 					if (ev.length == 0)
 						ev.length=1;
-					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_size));
+					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_len));
 					if (task_id<trace_nodes && t_id<trace_nodes && task_id>=0 && t_id>=0)
 						for (inst=0; inst<trace_instances; inst++){
 							i=translation[task_id][inst]; // Node to add event
@@ -265,7 +268,7 @@ void read_dimemas() {
 				}
 				break;
 			default:
-				printf("WARNING: There is an Unexpected Send type %d!!!\n", type);
+				printf("WARNING: There is an Unexpected Send type %ld!!!\n", type);
 				continue;
 			}
 			break;
@@ -281,7 +284,7 @@ void read_dimemas() {
 			switch (type){
 			case IRECV: // This is not useful for us.
 				break;
-			// A reception and a wait is the same for us.         
+			// A reception and a wait is the same for us.
 			case RECV:
 			case WAIT:
 				ev.type=RECEPTION;
@@ -291,7 +294,7 @@ void read_dimemas() {
 					ev.count=0; // Packets sent or received
 					if (ev.length == 0)
 						ev.length=1;
-					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_size));
+					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_len));
 					if (task_id<trace_nodes && t_id<trace_nodes && task_id>=0 && t_id>=0)
 						for (inst=0; inst<trace_instances; inst++){
 							i=translation[task_id][inst]; // Node to add event
@@ -303,8 +306,8 @@ void read_dimemas() {
 				}
 				break;
 			default:
-				printf("WARNING: There is an Unexpected Reception type %d!!!\n",type);
-				continue;   
+				printf("WARNING: There is an Unexpected Reception type %ld!!!\n",type);
+				continue;
 			}
 			break;
 
@@ -349,10 +352,10 @@ void read_dimemas() {
 				continue;
 			}
 			break;
-        
+
 		case EVENT:
 			// This will be useful to generate paraver output files.
-			break; 
+			break;
 
 // IO events could be treated as CPU or NETWORK events.
 		case FREAD:
@@ -363,14 +366,16 @@ void read_dimemas() {
 			cpu_burst=atol(strtok( NULL, sep));   //We have the size.
 			ev.type=COMPUTATION;
 			ev.length=(long)ceil((FILE_TIME+(FILE_SCALE*cpu_burst)/op_per_cycle)); // Computation time.
-			ev.count=0;				// Elapsed time.
-			if (task_id<trace_nodes && task_id>=0)
-				for (inst=0; inst<trace_instances; inst++){
-					ev.pid=translation[task_id][inst];
-					ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
-				}
-			else
-				panic("Adding cpu event into a non defined CPU"); 
+			if (ev.length>0){
+                ev.count=0;				// Elapsed time.
+                if (task_id<trace_nodes && task_id>=0)
+                    for (inst=0; inst<trace_instances; inst++){
+                        ev.pid=translation[task_id][inst];
+                        ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
+                    }
+                else
+                    panic("Adding cpu event into a non defined CPU");
+			}
 #endif
 			break;
 
@@ -382,47 +387,49 @@ void read_dimemas() {
 #ifdef FILEIO
 			ev.type=COMPUTATION;
 			ev.length=(long)ceil((FILE_TIME)/op_per_cycle); // Computation time.
-			ev.count=0; // Elapsed time.
-			if (task_id<trace_nodes && task_id>=0)
-				for (inst=0; inst<trace_instances; inst++){
-					ev.pid=translation[task_id][inst];
-					ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
-				}
-			else
-				panic("Adding cpu event into a non defined CPU");
+			if (ev.length>0){
+                ev.count=0; // Elapsed time.
+                if (task_id<trace_nodes && task_id>=0)
+                    for (inst=0; inst<trace_instances; inst++){
+                        ev.pid=translation[task_id][inst];
+                        ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
+                    }
+                else
+                    panic("Adding cpu event into a non defined CPU");
+			}
 #endif
 
-			break; 
+			break;
 		case IOCOLL:
-			break; 
+			break;
 		case IOBLOCKNCOLL:
-			break; 
+			break;
 		case IOBLOCKCOLL:
-			break; 
+			break;
 		case IONBLOCKNCOLLBEGIN:
-			break; 
+			break;
 		case IONBLOCKNCOLLEND:
-			break; 
+			break;
 		case IONBLOCKCOLLBEGIN:
-			break; 
+			break;
 		case IONBLOCKCOLLEND:
-			break; 
+			break;
 		case ONESIDEGENOP:
-			break; 
+			break;
 		case ONESIDEFENCE:
-			break; 
+			break;
 		case ONESIDELOCK:
-			break; 
+			break;
 		case ONESIDEPOST:
-			break; 
+			break;
 		case LAPIOP:
 			/// These are communication with different semantic values of the MPI. In study...
 #ifdef LAPI
 			type=atol(strtok( NULL, sep));      //We have the LAPI operation.
-			strtok( NULL, sep);                 //Handler dropped here. 
+			strtok( NULL, sep);                 //Handler dropped here.
 			t_id=atol(strtok( NULL, sep));      //We have the destination task id.
 			if ( t_id>=trace_nodes || t_id <0 ){
-				printf ("Destination task id is not defined (%d): Aborting!!!\n",task_id);
+				printf ("Destination task id is not defined (%ld): Aborting!!!\n",task_id);
 				return -1;
 			}
 
@@ -443,11 +450,11 @@ void read_dimemas() {
 				case LAPI_Alltoall: // Could be an Alltoall
 					break;
 				default:
-					printf ("Undefined LAPI operation: %d\n");
+					printf ("Undefined LAPI operation: %ld\n");
 					break;
 			}
 #endif
-			break; 
+			break;
 		default:
 			printf("WARNING: There is an Unexpected operation!!!\n");
 		}
@@ -483,16 +490,16 @@ void read_fsin_trc() {
 				if (strcmp(tok, "s")==0){
 					ev.type=SENDING;
 					tok=strtok(NULL, sep); // from
-					n1=atol(tok); // Node to add event
+					n1=atol(tok); // Sendet (Node to add event)
 					tok=strtok(NULL, sep);
-					n2=atol(tok); // event's PID: destiny when we are sending
-				} 
+					n2=atol(tok); // event's PID: destination when we are sending
+				}
 				else{ // if (strcmp(tok, "r")==0)
 					ev.type=RECEPTION;
 					tok=strtok(NULL, sep); // from
-					n2=atol(tok); // event's PID: origin when we are receiving
+					n2=atol(tok); // event's PID: origin of the message
 					tok=strtok(NULL, sep);
-					n1=atol(tok); // Node to receive from 
+					n1=atol(tok); // Destination of the message (local node)
 				}
 
 				if (n1!=n2) {
@@ -504,7 +511,7 @@ void read_fsin_trc() {
 					ev.count=0; // Packets sent or received
 					if (ev.length == 0)
 						ev.length=1;
-					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_size));
+					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_len));
 					if (n1<trace_nodes && n2<trace_nodes && n1>=0 && n2>=0)
 						for (inst=0; inst<trace_instances; inst++){
 							i=translation[n1][inst]; // Node to add event
@@ -518,18 +525,36 @@ void read_fsin_trc() {
 
 			else if (strcmp(tok, "c")==0){ // Computation.
 				ev.type=COMPUTATION;
-				tok=strtok(NULL, sep);	
+				tok=strtok(NULL, sep);
 				n1=atol(tok); // nodeId.
 				tok=strtok(NULL, sep);
-				ev.length=atol(tok)*CPU_SCALE; // Computation time.
-				ev.count=0; // Elapsed time.
-				if (n1<trace_nodes && n1>=0)
-					for (inst=0; inst<trace_instances; inst++){
-						ev.pid=translation[n1][inst]; // Node to add event
-						ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
-					}
-				else
-					panic("Adding cpu event into a non defined CPU");
+				switch (cpu_units){
+                    case UNIT_CYCLES:
+                        ev.length=((CLOCK_TYPE)atol(tok));
+                        break;
+                    case UNIT_MILLISECONDS:
+                        ev.length=(CLOCK_TYPE)(((atol(tok))*1000*link_bw)/(8*phit_len));
+                        break;
+                    case UNIT_MICROSECONDS:
+                        ev.length=(CLOCK_TYPE)(((atol(tok))*link_bw)/(8*phit_len));
+                        break;
+                    case UNIT_NANOSECONDS:
+                        ev.length=(CLOCK_TYPE)(((atol(tok))*link_bw)/(8000*phit_len));
+                        break;
+                    default:
+                        panic("Should not be here while reading a trace CPU");
+
+                }
+                if (ev.length>0){
+                    ev.count=0; // Elapsed time.
+                    if (n1<trace_nodes && n1>=0)
+                        for (inst=0; inst<trace_instances; inst++){
+                            ev.pid=translation[n1][inst]; // Node to add event
+                            ins_event(&network[ev.pid].events, ev); // Add event to its node event queue
+                        }
+                    else
+                        panic("Adding cpu event into a non defined CPU");
+                }
 			}
 		}
 	}
@@ -550,7 +575,7 @@ void read_fsin_trc() {
 *         timestamp: is the timestamp where the event occurred, its value will be dropt
 *         tag: is the tag of the mpi operation, it will be use to match sends and receptions
 *         size: the size of the message in bytes. it will be translated to number of packets
-* 
+*
 * Collective operations are not processed, so extended traces showing the point-2-point communications
 * within the collectives should be used.
 */
@@ -561,7 +586,7 @@ void read_alog() {
 	event ev;
 	long i,n1,n2,inst;
 	char sep[]=" \t";
-	
+
 	if((ftrc = fopen(trcfile, "r")) == NULL)
 		panic("Trace file not found in current directory");
 
@@ -593,7 +618,7 @@ void read_alog() {
 					ev.count=0; // Packets sent or received
 					if (ev.length == 0)
 						ev.length=1;
-					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_size));
+					ev.length = (long)ceil ( (double)ev.length/(pkt_len*phit_len));
 					if (n1<trace_nodes && n2<trace_nodes && n1>=0 && n2>=0)
 						for (inst=0; inst<trace_instances; inst++){
 							i=translation[n1][inst]; // Node to add event
@@ -709,10 +734,10 @@ void column_placement(){
 * 2 q. for 1-D, 4 q. for 2-D and 8 q. for 3-D.
 */
 void quadrant_placement() {
-	long i, j, k, d;
+	long i, j, d;
 	long n1, n2=1, n3=1; // nodes/2 in each dimension
 	long c1, c2, c3; // coordenates in each dimension of the base placement.
-	
+
 	for (i=0; i<nprocs; i++)
 	    network[i].source=INDEPENDENT_SOURCE;
 
@@ -776,10 +801,10 @@ void icube_placement() {
 	for (i=0; i<nprocs; i++)
 	    network[i].source=INDEPENDENT_SOURCE;
 
-printf("%d x %d\n",trace_instances, trace_nodes);
-printf("virtual  %d x %d x %d\n",tnodes_x, tnodes_y, tnodes_z);
-printf("switches %d x %d x %d\n",nodes_x, nodes_y, nodes_z);
-printf("nodes    %d x %d x %d\n",pnodes_x, pnodes_y, pnodes_z);
+printf("%ld x %ld\n",trace_instances, trace_nodes);
+printf("virtual  %ld x %ld x %ld\n",tnodes_x, tnodes_y, tnodes_z);
+printf("switches %ld x %ld x %ld\n",nodes_x, nodes_y, nodes_z);
+printf("nodes    %ld x %ld x %ld\n",pnodes_x, pnodes_y, pnodes_z);
 
 	for (j=0; j<trace_instances; j++)
 		for (i=0; i<trace_nodes; i++){
@@ -788,7 +813,7 @@ printf("nodes    %d x %d x %d\n",pnodes_x, pnodes_y, pnodes_z);
 			tx=t%tnodes_x;
 			ty=(t/tnodes_x)%tnodes_y;
 			tz=t/(tnodes_x*tnodes_y);
-			
+
 			sx=tx/pnodes_x;
 			nx=tx%pnodes_x;
             sy=ty/pnodes_y;
@@ -797,7 +822,7 @@ printf("nodes    %d x %d x %d\n",pnodes_x, pnodes_y, pnodes_z);
 			nz=tz%pnodes_z;
 			d=((sx+(nodes_x*(sy+(nodes_y*sz))))*nodes_per_switch)+(nx+(pnodes_x*(ny+(pnodes_y*nz))));
 			translation[i][j]=d;
-			printf("(%d,%d,%d)     %d, %d -> %d\n",tx,ty,tz,i,j,d);
+			printf("(%ld,%ld,%ld)     %ld, %ld -> %ld\n",tx,ty,tz,i,j,d);
 			network[d].source=OTHER_SOURCE;
 		}
 }
@@ -810,7 +835,7 @@ void circulant_placement(){
 	long task_non_counted=0;	// number of skipped tasks
 	long *task;					// array containing a list of skipped tasks
 	long *node;					// status of the nodes 0: not used yet, 1 already used.
-	
+
 	task=alloc(nprocs*sizeof(long));
 	node=alloc(nprocs*sizeof(long));
 	for (i=0; i<nprocs; i++)
@@ -832,12 +857,13 @@ void circulant_placement(){
 	}
 	j=0;
 	for (i=0; i<task_non_counted; i++){
-		while(node[j])	// look for the next free node
+		while(node[j]){	// look for the next free node
 			j++;
-		translation[task[i]][0]=j;
-		node[j=1];
+            translation[task[i]][0]=j;
+            node[j]=1;
+        }
 	}
-	printf ("%d missplaced nodes\n", task_non_counted);
+	printf ("%ld missplaced nodes\n", task_non_counted);
 }
 
 /**
@@ -869,30 +895,126 @@ void file_placement() {
 			task = atol(strtok( NULL, sep));
 			inst = atol(strtok( NULL, sep));
 			if (translation[task][inst]!=-1)
-				printf("Warning: task %d.%d is being redefined\n",task,inst);
+				printf("Warning: task %ld.%ld is being redefined\n",task,inst);
 			if (network[node].source==OTHER_SOURCE)
-				printf("Warning: node %d is being redefined\n",node);
+				printf("Warning: node %ld is being redefined\n",node);
 			translation[task][inst]=node;
 		    network[node].source=OTHER_SOURCE;
 		}
 	}
 }
 
+#if (SKIP_CPU_BURSTS==1)
+/**
+* Looks for the next CPU to finish and skips as many cycles as necessary (if network load is 0). Should speed up the execution of CPU-biased applications)
+*/
+void next_cpu_to_finish(){
+    long i;
+    CLOCK_TYPE res=CLOCK_MAX;
+    event e;
+
+    if (injected_count - rcvd_count != 0)
+        return;
+
+    for (i=0; i<NUMNODES; i++) {
+        if (network[i].source!=INDEPENDENT_SOURCE && !event_empty(&network[i].events)){
+            e=head_event(&network[i].events);
+            if (e.type==COMPUTATION){
+                //printf("%ld, %"PRINT_CLOCK"\n",i,e.length-e.count);
+                if (e.length-e.count<res)
+                    res=e.length-e.count;
+            } else if (e.type==SENDING)
+                return;
+        }
+    }
+    if (res!=CLOCK_MAX){
+        printf("%11"PRINT_CLOCK":: Skipped %"PRINT_CLOCK" cycles due to CPU-only activity\n",sim_clock,res);
+        sim_clock+=res; // current cycles hasn't been counted yet.
+
+        for (i=0; i<NUMNODES; i++) {
+            if (network[i].source!=INDEPENDENT_SOURCE && !event_empty(&network[i].events)){
+                e=head_event(&network[i].events);
+                if (e.type==COMPUTATION)
+                    do_event_n_times (&network[i].events, &e, res);
+            }
+        }
+    }
+}
+#endif //SKIP_CPU_BURSTS
+
+#if (CHECK_TRC_DEADLOCK>0)
+/**
+* Reports all the tasks that are in RECV state and which is the source task
+*/
+void report_receiving_tasks(){
+    long i;
+    event e;
+
+    for (i=0; i<NUMNODES; i++) {
+        if (network[i].source!=INDEPENDENT_SOURCE && !event_empty(&network[i].events)) {
+            e=head_event(&network[i].events);
+            printf("Task %ld :: ",i);
+            if(e.type==RECEPTION)
+                printf("waiting for Task %5ld (tag: %ld len: %lld)\n",i,e.pid,e.task,e.length);
+            else if(e.type==SENDING)
+                printf("sending to Task %5ld (tag: %ld len: %lld)\n",i,e.pid,e.task,e.length);
+            else
+                printf("computing for %lld cycles\n",i, e.length);
+        } else{
+            if (network[i].source==INDEPENDENT_SOURCE)
+                printf("Task %5d is independent\n",i);
+            else // if (event_empty(&network[i].events))
+                printf("Task %5d is done\n",i);
+        }
+    }
+}
+
+/**
+* Checks whether a trace execution has reached to a deadlock state, i.e. all tasks waiting for others
+*
+*@return B_FALSE if any active task which is not in RECV state, B_TRUE otherwise
+*/
+bool_t deadlocked_trc(){
+    long i;
+    event e;
+
+    for (i=0; i<NUMNODES; i++) {
+        if (network[i].source!=INDEPENDENT_SOURCE && !event_empty(&network[i].events) && (e=head_event(&network[i].events)).type!=RECEPTION)
+            return B_FALSE;
+    }
+    return B_TRUE;
+}
+
+long deadlocked_period=0;
+#endif /* CHECK_TRC_DEADLOCK */
+
 /**
 * Runs simulation using a trace file as workload.
 *
 * In this mode, simulation are running until all the events in the nodes queues are done.
-* It prints partial results each pinterval simulation cycles & calculates global 
+* It prints partial results each pinterval simulation cycles & calculates global
 * queues states for global congestion control.
 *
-* @see read_trace() 
+* @see read_trace()
 * @see init_functions
 * @see run_network
 */
 void run_network_trc() {
-	do {
 		long i;
-		data_movement(TRUE);
+	do {
+#if (CHECK_TRC_DEADLOCK>0)
+		if (deadlocked_trc()){
+            if(deadlocked_period++>CHECK_TRC_DEADLOCK){
+                report_receiving_tasks();
+                abort_sim("All the tasks have been waiting for each other for more than the threshold (CHECK_TRC_DEADLOCK). The application is probably deadlocked");
+            }
+		} else
+            deadlocked_period=0;
+#endif /* CHECK_TRC_DEADLOCK */
+#if (SKIP_CPU_BURSTS==1)
+        next_cpu_to_finish();
+#endif /* SKIP_CPU_BURSTS */
+		data_movement(B_TRUE);
 		sim_clock++;
 
 		if ((pheaders > 0) && (sim_clock % pinterval == 0)) {
@@ -902,16 +1024,17 @@ void run_network_trc() {
 			global_q_u = global_q_u_current;
 			global_q_u_current = injected_count - rcvd_count;
 		}
-		go_on=FALSE;
+		go_on=B_FALSE;
 		for (i=0; i<NUMNODES; i++) {
 			if (!event_empty (&network[i].events) /*&& network[i].source==OTHER_SOURCE*/) {
-				go_on=TRUE;
+				go_on=B_TRUE;
 				break;
 			}
 		}
-	} while (go_on);
+	} while (go_on && !interrupted  && !aborted);
 	print_partials();
 	save_batch_results();
 	reset_stats();
 }
 #endif
+

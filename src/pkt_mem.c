@@ -28,7 +28,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 *
 * It is created and allocated when stating simulation, and it must be not modify later.
 * It is used in heap mode, so we try to use the last free packet to favor spatial locality.
-* 
+*
 * @see pkt_init
 */
 packet_t * pkt_space;
@@ -74,12 +74,12 @@ void pkt_init(){
 * Frees a packet.
 *
 * Add the packet id. to the free packets
-* 
+*
 * @param n The id of the packet to free.
 */
 void free_pkt(unsigned long n){
 	if (last==pkt_max)
-		panic("Too much free packets");
+		panic("Too many free packets");
 	if (pkt_space[n].rr.rr!=NULL)
 		free(pkt_space[n].rr.rr);
 	f_pkt[++last]=n;
@@ -87,11 +87,12 @@ void free_pkt(unsigned long n){
 
 /**
 * Get a free packet.
-* 
+*
 * @return The id of the last used free packet.
 */
 unsigned long get_pkt(){
 	if (last<0)
-		panic("Packet memory is FULL.\n       Something wrong is happening");
+		panic("Packet memory is FULL.");
 	return f_pkt[last--];
 }
+

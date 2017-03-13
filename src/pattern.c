@@ -130,3 +130,4 @@ long reversal(long node, long nnodes) {
 
 	return to;
 }
+
